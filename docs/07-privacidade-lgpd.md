@@ -1,0 +1,158 @@
+# 07 — Privacidade e LGPD
+
+> ⚠️ Este documento é engenharia de privacidade, **não** parecer jurídico. As
+> questões que exigem advogado estão marcadas e listadas em
+> [10-riscos](10-riscos-e-questoes-abertas.md).
+
+## Dados pessoais tratados
+
+A LGPD define dado pessoal de forma ampla, e a ANPD inclui explicitamente
+**geolocalização de celular** como exemplo
+([ANPD — Titular de Dados](https://www.gov.br/anpd/pt-br/assuntos/titular-de-dados),
+[Lei 13.709/2018](https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)).
+
+| Dado | Quando | Onde fica | Sensibilidade |
+|---|---|---|---|
+| Frase de Segurança | no cadastro | aparelho, cifrada | alta — se vazar, o gatilho morre |
+| Segredo da Área protegida | no cadastro | aparelho, derivado, nunca em claro | alta |
+| Áudio bruto | continuamente, armada | **só RAM**, sobrescrito, nunca em disco | altíssima |
+| Áudio pós-disparo | só após disparo, se habilitado | aparelho + transmissão | altíssima, e **inclui terceiros** |
+| Geolocalização | só no disparo | Ocorrência | alta |
+| Carimbo de tempo, gatilho | só no disparo | Ocorrência | média |
+| Contatos da Rede de Apoio | no cadastro | aparelho + Painel | alta — são **terceiros** |
+
+Dois pontos que costumam passar batido:
+
+- **A Rede de Apoio é formada por titulares de dados que não instalaram o app.**
+  Nome e canal de contato deles são dados pessoais de terceiros.
+- **O áudio pós-disparo grava o agressor.** Também é titular. Ver [Q3](10-riscos-e-questoes-abertas.md).
+
+## O desenho que sustenta o discurso
+
+```
+ANTES DO DISPARO
+──────────────────────────────────
+microfone → VAD → motor local
+                      ↓
+                  descarta
+
+✗ NÃO sobe áudio para servidor
+✗ NÃO salva fala em disco
+✗ NÃO precisa de internet
+
+
+DEPOIS DO DISPARO
+──────────────────────────────────
+evento confirmado
+      ↓
+dados mínimos necessários
+      ↓
+proteção criptográfica
+      ↓
+rede previamente autorizada
+      ↓
+confirmação de recebimento
+```
+
+Isso é **minimização de verdade**, não slogan: o dado mais sensível do sistema
+(áudio contínuo) nunca é persistido nem transmitido. Combina com os princípios de
+segurança e minimização da LGPD e com a recomendação da ANPD de adotar medidas
+administrativas e técnicas de proteção
+([guia de segurança da ANPD](https://www.gov.br/anpd/pt-br/assuntos/noticias/anpd-publica-guia-de-seguranca-para-agentes-de-tratamento-de-pequeno-porte)).
+
+É um discurso muito mais forte do que "gravamos tudo 24 h por dia" — e é a
+diferença entre privacy by design e privacy by marketing.
+
+## Princípios aplicados
+
+| Princípio | Como aparece no Camaleão |
+|---|---|
+| **Finalidade** | Cada dado tem um uso declarado e só esse. Áudio serve para detectar a frase; não alimenta analytics, estatística nem melhoria de modelo. |
+| **Necessidade / minimização** | O Buffer pré-evento existe em RAM e é sobrescrito (RF-23). A Ocorrência leva o mínimo (RF-41). |
+| **Transparência** | A Área protegida diz exatamente quando a Sentinela para de funcionar (RF-27) e o que é enviado no disparo. |
+| **Segurança** | Frase e banco cifrados (RF-15, [C4](02-modelo-de-ameaca.md)); chaves em Keystore/Keychain. |
+| **Prevenção** | A opção de evidência pós-disparo vem **desligada** (RF-46). Consentimento é ato positivo, não padrão de fábrica. |
+| **Não discriminação** | Sem perfilamento. O app não infere nada sobre a usuária. |
+
+## Tensão real: transparência de plataforma vs. segurança da usuária
+
+A regra 2.5.14 da Apple exige indicação clara de captura de microfone
+([App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/)),
+e o Android obriga notificação persistente no Foreground Service.
+
+Ao mesmo tempo, [C1 do modelo de ameaça](02-modelo-de-ameaca.md) mostra que essa
+indicação é justamente o que pode denunciar a usuária ao agressor.
+
+**Não existe solução que satisfaça os dois lados.** O que o SOT determina:
+
+1. Jamais ocultar, suprimir ou falsificar indicador do sistema (RNF-09).
+2. O texto da notificação pode ser discreto e coerente com a Fachada, mas não pode
+   mentir sobre o uso do microfone.
+3. A usuária é informada, no cadastro, de que o sistema mostra uso de microfone e de
+   que isso é visível para quem olhar o aparelho. É informação de **segurança dela**,
+   não letra miúda.
+
+Essa tensão fica registrada como [Q1](10-riscos-e-questoes-abertas.md) e é um ótimo
+assunto para a defesa do projeto: demonstra que o time entendeu que os interesses
+legítimos aqui conflitam.
+
+## Checklist de hardening
+
+Controles a implementar, não a discutir. Detalhamento criptográfico em ADR
+[0004](../.claude/decisions/0004-integridade-da-ocorrencia.md).
+
+| Controle | Implementação |
+|---|---|
+| Áudio antes do gatilho | só ring buffer em RAM, sobrescrito continuamente |
+| Evidência após o gatilho | arquivo privado do app — **nunca** galeria ou downloads |
+| Criptografia | AES-GCM ou equivalente autenticado |
+| Chave de dados | chave aleatória **por evento**, wrapped por chave do Keystore/Keychain |
+| Integridade | SHA-256 + autenticação criptográfica + manifesto |
+| Autenticidade | manifesto assinado com chave do dispositivo, não exportável |
+| Auditoria | IDs sequenciais, timestamps, versão do app, hashes, resultado de envio |
+| Logs | **nunca** logar frase secreta, transcrição completa, GPS ou chave |
+| Banco local | dados sensíveis cifrados, mínimo necessário |
+| Backup | política explícita; evitar backup descontrolado de evidências |
+| Retenção | prazo configurável e exclusão segura conforme a finalidade |
+| Rede | TLS. Nunca HTTP simples |
+| Estado de alerta | diferenciar `CREATED`, `QUEUED`, `SENT`, `ACKNOWLEDGED` |
+| Código de cancelamento | **não** usar a mesma frase da ativação |
+| Interface sensível | bloquear exposição acidental em preview e no app switcher |
+| Build de release | remover logs de debug, endpoints de teste e modelos de desenvolvimento |
+| Atualizações | assinar e versionar mudanças de modelo e de threshold |
+
+No Android, o [Android Keystore](https://developer.android.com/privacy-and-security/keystore)
+permite chaves não exportáveis, vinculadas a hardware seguro (TEE / Secure Element)
+quando disponível. No iOS, o
+[Keychain Services](https://developer.apple.com/documentation/security/ksecclasskey)
+cumpre o papel equivalente.
+
+Princípio que resume tudo: **capturar o mínimo possível, pelo menor tempo possível.**
+
+## Pendências jurídicas — não resolver por conta própria
+
+| # | Questão | Estado | Quem responde |
+|---|---|---|---|
+| J1 | Gravação do agressor sem ciência dele, feita pela própria pessoa presente | **precedente favorável, não conclusão** — ver abaixo | Direito |
+| J2 | Base legal para tratar dados dos contatos da Rede de Apoio, que não aceitaram termo nenhum | aberta | Direito / DPO |
+| J3 | Se a usuária for adolescente: regras específicas para dados de crianças e adolescentes | aberta | Direito |
+| J4 | Responsabilidade do time se o alerta falhar numa emergência real | aberta | Direito |
+| J5 | Qual a base legal correta: quem é controlador, quem recebe os dados, qual o fluxo concreto. A LGPD contempla hipóteses específicas para dados sensíveis, incluindo **proteção da vida ou da incolumidade física** | aberta | Direito / DPO |
+
+### J1 — o que se sabe, e o que não se pode afirmar
+
+A jurisprudência brasileira admite, em várias circunstâncias, gravações feitas por
+**um dos próprios interlocutores** sem conhecimento do outro. O STF consolidou
+entendimento nesse sentido no **Tema 237**
+([notícia STF](https://noticias.stf.jus.br/postsnoticias/stf-reconhece-repercussao-geral-e-reafirma-ser-possivel-aproveitar-gravacao-como-prova/)),
+e o STJ segue tratando gravações desse tipo como potencialmente válidas.
+
+**Mas há diferenças relevantes** entre gravação por interlocutor, gravação ambiental
+por terceiro, gravação com auxílio policial e situações sob sigilo específico.
+
+→ Consequência direta, que é requisito RF-53: **o aplicativo não pode exibir "esta
+gravação é uma prova judicial válida".** Pode dizer apenas que preserva informações
+de integridade e rastreabilidade, e que o uso jurídico depende do caso concreto.
+
+O precedente torna J1 menos bloqueante do que parecia, mas não dispensa a consulta:
+há faculdade de Direito na instituição. Este SOT não arrisca palpite sobre lei.

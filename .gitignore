@@ -1,0 +1,41 @@
+# Android / Kotlin
+*.iml
+.gradle/
+local.properties
+.idea/
+build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Modelos de voz — grandes, baixados por script
+modelos/
+*.zip
+!referencias/*.zip
+
+# Dados de teste e medição — brutos, não versionados por padrão
+dados-brutos/
+*.wav
+*.pcm
+
+# Python do verificador
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Segredos
+*.keystore
+*.jks
+keystore.properties
+.env

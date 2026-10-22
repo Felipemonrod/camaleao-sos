@@ -1,0 +1,114 @@
+# Relatório de uso de IA
+
+Registro do uso de inteligência artificial neste projeto. Este é o **único** lugar
+onde o uso de IA é documentado — por decisão de projeto, não há atribuição de IA em
+mensagens de commit nem em descrições de PR
+([AGENTS.md R10](AGENTS.md)).
+
+Formato: uma entrada por sessão, em ordem cronológica. Cada entrada diz **o que foi
+pedido**, **o que a IA produziu**, **o que foi verificado ou corrigido por uma
+pessoa** e **o que não foi verificado**.
+
+A última coluna é a mais importante. Documentação gerada por IA e não verificada é
+exatamente o tipo de coisa que leva alguém a prometer, para uma banca ou para uma
+usuária, algo que o sistema não faz.
+
+---
+
+## Como registrar uma sessão
+
+Copie o bloco abaixo e preencha. Não apague entradas antigas.
+
+```markdown
+## AAAA-MM-DD — <assunto da sessão>
+
+**Ferramenta:** <Claude Code / Copilot / outra, com o modelo se souber>
+**Pessoa responsável:** <nome>
+
+**Pedido:**
+<o que foi solicitado, em 1–3 linhas>
+
+**Produzido:**
+<arquivos criados ou alterados, e o que mudou>
+
+**Verificado por pessoa:**
+- [ ] <o que foi conferido, e como>
+
+**Não verificado — pendente:**
+- <o que ficou sem conferência, e o que pode dar errado se estiver errado>
+
+**Correções manuais feitas depois:**
+<o que a pessoa teve de corrigir. "Nada" é resposta válida, se for verdade>
+```
+
+---
+
+## 2026-10-21 — Criação do SOT a partir das pesquisas de viabilidade
+
+**Ferramenta:** Claude Code (Claude Opus 5)
+**Pessoa responsável:** Felipe Montalvão Rodrigues
+
+**Pedido:**
+Documentar o sistema Camaleão SOS a partir de duas pesquisas de viabilidade, dar uma
+opinião crítica sobre ele, e organizar tudo num modelo SOT para começar um protótipo.
+Em seguida, preparar o repositório para o GitHub, incluindo o próprio sistema SOT
+documentado para que outras pessoas e outros agentes de IA possam contribuir do mesmo
+jeito.
+
+**Produzido:**
+
+| Área | Arquivos |
+|---|---|
+| Método | `SISTEMA-SOT.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `docs/_templates/` |
+| Documentação | `SOT.md`, `README.md`, `docs/00` a `docs/11` |
+| Decisões | `.claude/decisions/0001` a `0008` |
+| Ferramenta | `tools/verificar-sot.py`, `.github/workflows/verificar-sot.yml` |
+| GitHub | templates de PR e de issue, `.gitignore` |
+| Referências | as duas pesquisas, íntegras, com os marcadores de citação resolvidos em links |
+
+**Verificado automaticamente:**
+
+- `python tools/verificar-sot.py` — 9 verificações, 0 falhas. Checa links internos,
+  front matter dos ADRs, e se todo ID de requisito, questão aberta e risco citado
+  existe de fato.
+
+**Verificado por busca durante a sessão:**
+
+- suporte do Vosk a lista de frases / gramática restrita (`vosk_recognizer_new_grm`,
+  `SetGrm`), e a ressalva de que exige modelo com lookahead;
+- política de Comportamento Enganoso do Google Play sobre recursos ocultos;
+- prior art brasileiro: Clique 180, Botão do Pânico Virtual do Paraná;
+- prior art internacional: Aspire News e as duas falhas documentadas dele;
+- linha de pesquisa de *clinical computer security* (Cornell Tech).
+
+**⚠️ Não verificado — pendente de conferência humana:**
+
+| Pendência | Risco se estiver errado | Onde |
+|---|---|---|
+| As fontes de plataforma herdadas das duas pesquisas (Android FGS, iOS background, App Review 2.5.14, taxas da Apple) **não foram abertas uma por uma nesta sessão** | uma afirmação de plataforma errada em `docs/04` se propaga para a apresentação | `docs/04` |
+| `vosk-model-small-pt-0.3` aceita reconfiguração de gramática? | derruba a condição de validade do ADR 0002 | [Q4](docs/10-riscos-e-questoes-abertas.md) |
+| Clique 180 ainda está nas lojas? Informação de 2018 | citação desatualizada na apresentação | [Q8](docs/10-riscos-e-questoes-abertas.md) |
+| Existe algum app com KWS local para frase de coação? Ausência de resultado não é prova de ausência | a alegação de diferencial enfraquece | [Q8](docs/10-riscos-e-questoes-abertas.md) |
+| Pendências jurídicas J1 a J5 | afirmação incorreta sobre prova e sobre base legal | `docs/07` |
+
+**Correções manuais feitas depois:**
+
+<a preencher pela pessoa responsável>
+
+**Observação sobre a origem do material:**
+
+As duas pesquisas em `referencias/` foram produzidas por outra ferramenta de IA
+(metadados indicam `gpt-5-thinking`). O SOT **divergiu** delas em três pontos, cada um
+com ADR explicando o motivo — ADRs 0002, 0003 e 0005 — e acrescentou um modelo de
+ameaça que nenhuma das duas tinha (`docs/02`). O ADR 0004 **corrige** a proposta
+original do hackathon quanto a SHA-256 e cadeia de custódia.
+
+Isso é relevante para o relatório: o material de partida não foi aceito como verdade,
+e as divergências estão registradas e justificadas por escrito.
+
+**Pendência de material:**
+
+As duas pesquisas citam um **documento de proposta do hackathon**
+(`fileciteturn0file0`) que não veio em nenhuma das exportações. Sem ele, a visão de
+produto em `docs/00` é reconstrução, não citação. Conseguir esse arquivo é a pendência
+mais barata e mais valiosa da lista.

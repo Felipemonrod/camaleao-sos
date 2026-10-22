@@ -1,0 +1,32 @@
+name: Verificar SOT
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verificar:
+    name: Invariantes do Sistema SOT
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verificar invariantes
+        run: python tools/verificar-sot.py
+
+      - name: Conferir ausência de atribuição de IA nos commits
+        if: github.event_name == 'pull_request'
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          if git log --format='%B' "$base..$head" | grep -Eiq 'co-authored-by:.*(claude|copilot|gpt|gemini)|generated with.*claude'; then
+            echo "Commits com atribuição de IA. Ver AGENTS.md R10 e CONTRIBUTING.md."
+            echo "O uso de IA se registra em RELATORIO-IA.md."
+            exit 1
+          fi
+          echo "ok"
