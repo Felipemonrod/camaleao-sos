@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Camaleão SOS · Demonstração</title>
+<meta name="description" content="Protótipo de hackathon: proteção discreta por voz, offline, para situações de violência doméstica.">
+<style>
+  :root { --bg:#f4f7f2; --card:#ffffff; --ink:#17342d; --muted:#5b6f65; --green:#167a63; --soft:#e3ede0; --warn:#c4501e; --warnbg:#fff1e6; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1a17; --card:#16241f; --ink:#e6f0eb; --muted:#9db3a8; --green:#3fbf98; --soft:#1f332c; --warn:#ff9a6b; --warnbg:#2a1c14; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 920px; margin: 0 auto; padding: 24px 16px 48px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:28px; }
+  .brand { font-weight:800; font-size:22px; color:var(--green); }
+  .chip { font-size:12px; font-weight:700; letter-spacing:.06em; background:var(--soft); color:var(--green); padding:6px 10px; border-radius:999px; }
+  .hero { display:grid; grid-template-columns: 1.4fr 1fr; gap:28px; align-items:center; }
+  h1 { font-size: clamp(30px, 6vw, 46px); line-height:1.1; margin:0 0 14px; }
+  .lead { color:var(--muted); font-size:18px; margin:0 0 22px; }
+  .btn { display:inline-block; background:var(--green); color:#fff; text-decoration:none; font-weight:700; padding:14px 22px; border-radius:14px; }
+  .btn small { display:block; font-weight:500; opacity:.85; }
+  .qr { background:#fff; border-radius:20px; padding:18px; text-align:center; box-shadow:0 6px 24px rgba(0,0,0,.08); }
+  .qr img { width:100%; max-width:260px; height:auto; display:block; margin:0 auto; }
+  .qr p { color:#17342d; margin:10px 0 0; font-size:14px; }
+  section { margin-top:36px; }
+  h2 { font-size:24px; margin:0 0 14px; }
+  .card { background:var(--card); border-radius:20px; padding:20px 22px; margin-bottom:14px; }
+  ol { margin:0; padding-left:22px; } li { margin:6px 0; }
+  .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
+  .grid .card h3 { margin:0 0 6px; font-size:17px; }
+  .grid .card p { margin:0; color:var(--muted); font-size:15px; }
+  .warn { background:var(--warnbg); border-left:4px solid var(--warn); }
+  .warn strong { color:var(--warn); }
+  code { background:var(--soft); padding:2px 6px; border-radius:6px; font-size:.95em; }
+  table { width:100%; border-collapse:collapse; }
+  td { padding:8px 6px; vertical-align:top; border-top:1px solid var(--soft); }
+  td:first-child { width:42px; font-size:20px; }
+  footer { margin-top:40px; color:var(--muted); font-size:13px; word-break:break-word; }
+  footer a { color:var(--green); }
+  @media (max-width: 720px) { .hero, .grid { grid-template-columns: 1fr; } .qr { display:none; } }
+</style>
+</head>
+<body>
+<main>
+  <header><span class="brand">◔ camaleão sos</span><span class="chip">PROTÓTIPO · HACKATHON</span></header>
+
+  <div class="hero">
+    <div>
+      <h1>Um pedido de ajuda que cabe numa frase.</h1>
+      <p class="lead">App Android disfarçado de calculadora. Ele reconhece uma <strong>frase secreta</strong> sem internet, dentro do próprio celular, e avisa a sua rede de apoio por SMS com a localização.</p>
+      <a class="btn" href="https://github.com/Felipemonrod/camaleao-sos/releases/download/v0.3.0-demo/Camaleao-SOS-0.3.0.apk">Baixar o app (Android)<small>versão 0.3.0 · 73 MB · Android 8 ou mais novo</small></a>
+    </div>
+    <div class="qr"><img src="qr.svg" alt="QR code para abrir esta página no celular"><p>Aponte a câmera do celular Android</p></div>
+  </div>
+
+  <section>
+    <h2>Como funciona</h2>
+    <div class="grid">
+      <div class="card"><h3>Fachada</h3><p>Aparece como “Cálculos” e calcula de verdade. Um código digitado abre a área protegida.</p></div>
+      <div class="card"><h3>Sentinela de voz offline</h3><p>Armada, ouve só a sua frase. Nenhum áudio sai do celular para reconhecer.</p></div>
+      <div class="card"><h3>Palavra por função</h3><p>Depois da frase, uma palavra escolhida: avisar contatos, mandar localização ou gravar.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Instalar (sem modo desenvolvedor)</h2>
+    <div class="card">
+      <ol>
+        <li>Toque em <strong>Baixar o app</strong>. Se o navegador avisar sobre o arquivo, escolha <strong>Baixar mesmo assim</strong>.</li>
+        <li>Abra o arquivo baixado. O Android pede para <strong>permitir instalar apps desta fonte</strong>: permita só para o navegador.</li>
+        <li>Se o <strong>Play Protect</strong> avisar sobre app desconhecido, toque em <strong>Mais detalhes → Instalar mesmo assim</strong>. Explicamos o motivo abaixo.</li>
+        <li>O app aparece como <strong>Cálculos</strong>.</li>
+      </ol>
+    </div>
+    <div class="card warn">
+      <strong>Por que o Android pode alertar:</strong> o app não vem da Play Store e pede microfone, SMS e localização com uma tela disfarçada — o mesmo perfil de apps espiões. Aqui o disfarce protege quem pede ajuda. O código é público no GitHub, para quem quiser conferir.
+    </div>
+  </section>
+
+  <section>
+    <h2>Testar em 3 minutos</h2>
+    <div class="card">
+      <ol>
+        <li>Na calculadora, digite <code>2580</code> e toque em <code>=</code>.</li>
+        <li>Crie dois códigos diferentes de 6 a 12 dígitos: um abre a área protegida, o outro dispara o alerta sem sair da calculadora.</li>
+        <li>Mantenha a frase <strong>“Preciso buscar meu caderno azul”</strong> e calibre: leia-a 3 vezes e uma frase parecida 1 vez.</li>
+        <li>Em <strong>Rede de Apoio</strong>, cadastre um número seu de teste e autorize a comunicação.</li>
+        <li>Toque em <strong>Armar Sentinela</strong>, bloqueie a tela e diga a frase. Em até 6 segundos, diga <strong>“enviar alerta”</strong>.</li>
+      </ol>
+    </div>
+    <div class="card warn">
+      <strong>Antes de testar:</strong> o SMS sai do <strong>seu chip</strong>, para o número que <strong>você</strong> cadastrar, e fica na caixa de enviados. Nada é enviado aos desenvolvedores. Para remover tudo, desinstale “Cálculos”.
+    </div>
+  </section>
+
+  <section>
+    <h2>O que afirmamos, e o que não</h2>
+    <div class="card">
+      <table>
+        <tr><td>✅</td><td>Reconhecimento da frase <strong>no próprio aparelho</strong>, sem enviar áudio. Zero disparos em ~14 h de conversa sintética nos nossos testes.</td></tr>
+        <tr><td>✅</td><td>O app só diz “recebido” com recibo assinado. SMS aparece como “aceito pela operadora”, nunca como “entregue”.</td></tr>
+        <tr><td>⚠️</td><td>Com voz clara e de perto, a frase é reconhecida na maioria das vezes; com TV alta ou de longe, bem menos. Ainda medindo com vozes reais.</td></tr>
+        <tr><td>❌</td><td>Não funciona com o app fechado à força nem após reiniciar sem rearmar. Não aciona polícia ou serviços públicos. Não substitui o 190 ou o Ligue 180.</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Protótipo acadêmico, sem fins comerciais. Em perigo imediato, ligue <strong>190</strong>. Violência contra a mulher: <strong>Ligue 180</strong>.<br>
+    Código: <a href="https://github.com/Felipemonrod/camaleao-sos">github.com/Felipemonrod/camaleao-sos</a> ·
+    SHA-256 do APK: <code>b390c1c0a754eea999555b1cc448c63de86259d2a4a921e7cc20885238aff715</code>
+  </footer>
+</main>
+</body>
+</html>
