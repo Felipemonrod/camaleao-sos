@@ -176,3 +176,14 @@ Revisão final: migração de atualização verificada e registrada nos document
 [07](../docs/07-privacidade-lgpd.md#controles-entregues-e-limites-pendentes) e
 [09](../docs/09-plano-de-testes.md#registro-de-execução). A entrega permanece local,
 conforme escolha explícita do responsável; sem publicação remota.
+
+## 2026-10-22 — Preparação para publicação no GitHub
+
+O responsável autorizou publicar os fontes em uma nova branch do repositório
+Felipemonrod/camaleao-sos. A cópia de Downloads foi comparada com os arquivos
+versionados da área de trabalho antes da preparação.
+
+As exclusões de publicação estão em [`.gitignore`](../.gitignore), incluindo
+dependências Node.js, segredos, dados locais e modelos de voz. O Gradle Wrapper
+permanece versionado. A branch de publicação parte da implementação local e mantém
+o histórico da documentação existente; a branch principal não é alterada.

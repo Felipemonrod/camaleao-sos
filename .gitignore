@@ -1,9 +1,11 @@
 # Android / Kotlin
 *.iml
 .gradle/
+.kotlin/
 local.properties
 .idea/
 build/
+out/
 captures/
 .externalNativeBuild/
 .cxx/
@@ -12,11 +14,45 @@ captures/
 *.ap_
 *.dex
 *.class
+*.aar
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+*.so
+*.dll
+*.exe
+
+# Dependências e saídas do Node.js — manter package.json e lockfiles
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+dist/
+coverage/
+.nyc_output/
+*.log
+*.tsbuildinfo
 
 # Modelos de voz — grandes, baixados por script
 modelos/
+app/src/main/assets/models/
 *.zip
 !referencias/*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.tgz
+*.onnx
+*.tflite
+*.fst
+*.mdl
+*.bin
+*.pt
+*.pth
+*.safetensors
+*.gguf
+*.ggml
 
 # Dados de teste e medição — brutos, não versionados por padrão
 dados-brutos/
@@ -39,9 +75,24 @@ desktop.ini
 *.jks
 keystore.properties
 .env
-.tools/
-.kotlin/
-artifacts/
-app/src/main/assets/models/
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+credentials-*.json
+service-account*.json
+*-firebase-adminsdk-*.json
+google-services.json
 server/data/
 server/certs/
+
+# Ferramentas, downloads e artefatos locais
+.tools/
+downloads/
+artifacts/
+release.json

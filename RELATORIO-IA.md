@@ -140,3 +140,18 @@ Na revisão final, foi acrescentada a migração do primeiro protótipo e seu te
 regressão; controles em [docs/07](docs/07-privacidade-lgpd.md#controles-entregues-e-limites-pendentes).
 O responsável escolheu manter somente os arquivos locais. Nenhum commit foi enviado
 ao repositório remoto.
+
+## 2026-10-22 — Preparação de publicação com Codex
+
+**Solicitação humana:** inspecionar a pasta local, configurar o `.gitignore` e
+publicar o aplicativo Android e o servidor Node.js no repositório informado,
+em uma nova branch, preservando a documentação existente.
+
+**Trabalho realizado:** comparação dos fontes de Downloads com a cópia da área de
+trabalho, revisão dos arquivos versionados e do histórico local a enviar, ajuste
+das exclusões de publicação e validação das regras de inclusão e exclusão.
+As regras ficam em [`.gitignore`](.gitignore).
+
+Esta sessão não altera requisitos, ADRs ou decisões de produto. A nova autorização
+de publicação substitui a escolha de entrega somente local registrada na sessão
+anterior.
