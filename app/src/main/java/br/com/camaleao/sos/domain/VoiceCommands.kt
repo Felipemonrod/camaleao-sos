@@ -5,6 +5,7 @@ enum class VoiceAction(val key: String, val label: String, val defaultWords: Str
     ALERT("alerta", "Avisar contatos por SMS", "enviar alerta"),
     LOCATION("localizacao", "Compartilhar localização por SMS", "compartilhar localização"),
     RECORD("gravacao", "Gravar áudio cifrado", "gravar evidência"),
+    CALL("ligacao", "Ligar para contatos", "chamar contato"),
 }
 
 data class VoiceCommand(val action: VoiceAction, val words: String, val enabled: Boolean)

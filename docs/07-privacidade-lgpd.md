@@ -20,6 +20,7 @@ A LGPD define dado pessoal de forma ampla, e a ANPD inclui explicitamente
 | Geolocalização | só no disparo | Ocorrência | alta |
 | Carimbo de tempo, gatilho | só no disparo | Ocorrência | média |
 | Contatos da Rede de Apoio | no cadastro | aparelho + Painel | alta — são **terceiros** |
+| Telefones da Rede de Apoio | no pedido de ligação ao Painel ([ADR 0012](../.claude/decisions/0012-ligacao-pelo-painel-e-linha-aberta.md)) | memória do discador do Painel, nunca em `state.bin`; a tela mostra só os 4 últimos dígitos | alta — são **terceiros** |
 
 Dois pontos que costumam passar batido:
 

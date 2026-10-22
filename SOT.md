@@ -85,6 +85,7 @@ fechada nos documentos acima** — aponte para o ADR.
 | [0009](.claude/decisions/0009-notificacao-e-cancelamento-protegido.md) | Notificação clara e cancelamento dentro da Área protegida | aceito |
 | [0010](.claude/decisions/0010-palavra-por-funcao-e-sms-automatico.md) | Palavra por função na janela de comando; SMS automático à Rede de Apoio | aceito |
 | [0011](.claude/decisions/0011-estagio-1-com-iscas-e-segunda-leitura.md) | Estágio 1 com iscas na gramática e segunda leitura do Buffer pré-evento | aceito, condicionado à medição com voz real |
+| [0012](.claude/decisions/0012-ligacao-pelo-painel-e-linha-aberta.md) | Ligação pelo Painel com voz e, sem Painel, linha aberta no aparelho | aceito, condicionado ao teste no S25 e no aparelho de discagem |
 
 **Anotações cronológicas** do dia a dia vão em [`.claude/NOTES.md`](.claude/NOTES.md).
 

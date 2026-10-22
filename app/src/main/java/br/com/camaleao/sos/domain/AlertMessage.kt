@@ -18,6 +18,20 @@ object AlertMessage {
             if (p == null) " (Localização indisponível.)"
             else " Localização: ${link(p)} (±${p.accuracy.toInt()} m)"
 
+    /** Aviso por SMS antes da ligação em silêncio, para quem atende não falar. */
+    fun openLine(p: Position?): String =
+        "Vou te ligar e ficar em silêncio: é um alerta. Atenda e escute, não fale." +
+            if (p == null) " (Localização indisponível.)"
+            else " Localização: ${link(p)} ${coordinates(p)} (±${p.accuracy.toInt()} m)"
+
+    /** Mensagem falada pelo discador do Painel. Sem link: ninguém clica numa ligação. */
+    fun spoken(base: String, p: Position?): String =
+        "Alerta do Camaleão. " + base.trim().ifBlank { DEFAULT }.take(160) +
+            if (p == null) " A localização não está disponível. Verifique o SMS."
+            else " A localização foi enviada por SMS."
+
+    fun coordinates(p: Position) = String.format(Locale.US, "%.5f, %.5f", p.lat, p.lon)
+
     fun location(p: Position?, update: Int): String =
         if (p == null) "Localização indisponível agora."
         else

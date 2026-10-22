@@ -108,6 +108,7 @@ private fun MainActivity.saveFunctions(next: List<VoiceCommand>, message: String
         needed += Manifest.permission.SEND_SMS
     if (next.any { it.enabled && it.action != VoiceAction.RECORD } && store.flag("location_consent"))
         needed += listOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+    if (next.any { it.enabled && it.action == VoiceAction.CALL }) needed += Manifest.permission.CALL_PHONE
     val missing = needed.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
     if (missing.isNotEmpty()) requestPermissions(missing.toTypedArray(), 4)
     toast("Funções salvas. Teste com a frase antes de depender delas.")
@@ -120,6 +121,8 @@ private fun description(a: VoiceAction) =
             "Cria a Ocorrência e envia SMS a todos os participantes, com link de mapa se houver posição. Sai depois da preparação de 5 s, que pode ser cancelada aqui."
         VoiceAction.LOCATION ->
             "Envia SMS com a posição atual e repete a cada 5 minutos enquanto a Sentinela estiver armada."
+        VoiceAction.CALL ->
+            "Pede ao Painel que ligue com voz gravada. Sem Painel, avisa por SMS e liga daqui com o volume no mínimo, mostrando a tela de chamada. Repete até a ligação durar 40 s ou a Sentinela ser desarmada."
         VoiceAction.RECORD ->
             "Grava o áudio do microfone já em uso, cifrado neste aparelho, pelo tempo escolhido. Desligada por padrão."
     }

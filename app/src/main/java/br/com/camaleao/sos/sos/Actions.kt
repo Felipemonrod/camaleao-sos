@@ -7,6 +7,7 @@ import br.com.camaleao.sos.domain.VoiceAction
 import br.com.camaleao.sos.domain.VoiceCommand
 import br.com.camaleao.sos.sentinela.LocationProbe
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** Funções escolhidas pela usuária. Todos os Gatilhos de alerta convergem aqui (RF-32). */
 object Actions {
@@ -58,6 +59,41 @@ object Actions {
             )
         }
         return id
+    }
+
+    private val calling = AtomicBoolean(false)
+
+    /**
+     * Liga para a Rede de Apoio. Com o Painel no ar, ele liga e fala o aviso, e o aparelho
+     * fica quieto. Sem Painel, avisa por SMS e liga daqui em linha aberta (OpenLineCall).
+     */
+    fun call(context: Context) {
+        val app = context.applicationContext
+        val store = Store(app)
+        if (!enabled(store, VoiceAction.CALL) || !store.flag("share_consent")) return
+        if (!calling.compareAndSet(false, true)) return
+        LocationProbe.request(app, store, 10_000) { position ->
+            Thread {
+                    try {
+                        val phones =
+                            EmergencySms.contacts(store).map {
+                                it.getString("phone").filterIndexed { i, ch -> ch.isDigit() || (i == 0 && ch == '+') }
+                            }
+                        if (phones.isEmpty()) return@Thread
+                        val text = store.get("sms_text", AlertMessage.DEFAULT)
+                        if (PanelTransport(store).call(phones, AlertMessage.spoken(text, position))) {
+                            EmergencySms.note(store, "ligação", "Rede de Apoio", "PEDIDA AO PAINEL")
+                            EmergencySms.send(app, store, "ligação", AlertMessage.alert(text, position))
+                        } else {
+                            EmergencySms.send(app, store, "ligação", AlertMessage.openLine(position))
+                            OpenLineCall.run(app, store)
+                        }
+                    } finally {
+                        calling.set(false)
+                    }
+                }
+                .start()
+        }
     }
 
     /** Envia a posição agora e repete a cada 5 min enquanto a Sentinela estiver armada. */

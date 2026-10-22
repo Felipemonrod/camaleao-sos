@@ -281,3 +281,23 @@ USB e Wi-Fi; notebook Windows com Painel local; Vosk `small-pt-0.3`. Mudanças e
 **Limites desta execução:** o teste de 30 min ocorreu em silêncio e no carregador:
 não mede falso positivo em conversa nem bateria (RNF-05), e sem Doze. A frase falada
 por pessoa real ainda não foi medida. O SMS entregue não foi observado diretamente.
+
+### Execução de 22/10/2026 — ligação para a Rede de Apoio (só no PC)
+
+Mudança em [ADR 0012](../.claude/decisions/0012-ligacao-pelo-painel-e-linha-aberta.md).
+Nenhuma ligação real foi feita.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Compilação Android debug | aprovada |
+| Testes unitários | 15 aprovados (14 anteriores + `FunctionsTest.callMessagesNeverInventPosition`) |
+| Testes do Painel (Node) | 21 aprovados (8 anteriores + 13 de `server/test/call.test.mjs`): pedido sem token, alterado ou antigo recusado; sem discador responde 503; repetição devolve a mesma ligação; discador simulado liga em rodadas até atender; cancelamento pelo Painel; telefone fora de `state.bin` e da listagem; número com caractere de shell recusado |
+| Formato de `dumpsys telephony.registry` no S25 | conferido: `Foreground call state: N` por chip, lido pelo discador |
+
+**Falta no aparelho, antes de marcar RF-59 a RF-63:**
+
+- ⚠️ **Não verificado:** `AudioManager.getMode()` devolvendo `MODE_IN_CALL` para app comum no S25 (Android 16). Sem isso, o caminho A para depois da primeira ligação.
+- `TelecomManager.placeCall` com a Fachada em segundo plano e a Sentinela armada; volume de chamada no mínimo; retomada do microfone depois da chamada (RNF-14).
+- Discador real: Android de discagem no notebook, `DISCADOR=adb DISCADOR_SERIAL=<serial> npm start`, ligação atendida, não atendida e recusada; estado `1` (ACTIVE) só no atendimento.
+- Voz SAPI pt-BR no notebook audível pelo microfone do aparelho de discagem.
+- Xiaomi com `CALL_PHONE` e a permissão própria do MIUI/HyperOS.
