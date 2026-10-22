@@ -155,3 +155,12 @@ As regras ficam em [`.gitignore`](.gitignore).
 Esta sessão não altera requisitos, ADRs ou decisões de produto. A nova autorização
 de publicação substitui a escolha de entrega somente local registrada na sessão
 anterior.
+
+## 2026-10-22 — Correção do CI com Codex
+
+**Solicitação humana:** investigar a falha de validação apresentada na captura do
+GitHub Actions. Foram lidos os logs remotos, a definição da action e a tabela
+oficial de compatibilidade do AGP. A lista de pacotes do SDK foi explicitada no
+workflow, sem alteração do aplicativo ou das decisões de produto.
+
+Diagnóstico e execução original: [anotação da sessão](.claude/NOTES.md#2026-10-22--correção-da-preparação-do-android-no-ci).

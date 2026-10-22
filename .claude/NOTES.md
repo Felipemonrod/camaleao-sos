@@ -187,3 +187,11 @@ As exclusões de publicação estão em [`.gitignore`](../.gitignore), incluindo
 dependências Node.js, segredos, dados locais e modelos de voz. O Gradle Wrapper
 permanece versionado. A branch de publicação parte da implementação local e mantém
 o histórico da documentação existente; a branch principal não é alterada.
+
+## 2026-10-22 — Correção da preparação do Android no CI
+
+A primeira execução remota parou em `setup-android`, ao tentar instalar o pacote
+`tools` da configuração padrão da action. A lista de pacotes em
+[`android.yml`](../.github/workflows/android.yml) passa a indicar os componentes
+usados pela compilação. O resultado da execução original está no
+[job do GitHub Actions](https://github.com/Felipemonrod/camaleao-sos/actions/runs/39777720370/job/119820816885).

@@ -21,6 +21,8 @@ jobs:
         with:
           node-version: '22'
       - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;35.0.0'
       - run: python tools/preparar-modelos.py
       - run: chmod +x gradlew && ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
       - run: node server/setup.mjs > /tmp/camaleao-pareamento-teste.txt && node --test server/test/*.test.mjs
