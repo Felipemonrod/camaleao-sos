@@ -18,6 +18,9 @@ object AlertMessage {
             if (p == null) " (Localização indisponível.)"
             else " Localização: ${link(p)} (±${p.accuracy.toInt()} m)"
 
+    /** Repetição do alerta, com a posição do momento. */
+    fun repeat(base: String, p: Position?, n: Int, total: Int): String = "Repetindo ($n/$total): " + alert(base, p)
+
     /** Aviso por SMS antes da ligação em silêncio, para quem atende não falar. */
     fun openLine(p: Position?): String =
         "Vou te ligar e ficar em silêncio: é um alerta. Atenda e escute, não fale." +

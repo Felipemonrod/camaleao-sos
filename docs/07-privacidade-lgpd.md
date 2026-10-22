@@ -17,9 +17,9 @@ A LGPD define dado pessoal de forma ampla, e a ANPD inclui explicitamente
 | Segredo da Área protegida | no cadastro | aparelho, derivado, nunca em claro | alta |
 | Áudio bruto | continuamente, armada | **só RAM**, sobrescrito, nunca em disco | altíssima |
 | Áudio pós-disparo | só após disparo, se habilitado | aparelho + transmissão | altíssima, e **inclui terceiros** |
-| Geolocalização | só no disparo | Ocorrência | alta |
+| Geolocalização | no disparo; com a Sentinela armada, atualizada a cada 30 s só na memória ([ADR 0013](../.claude/decisions/0013-disparo-so-com-frase-e-localizacao-continua.md)) | memória enquanto armada; Ocorrência e SMS no alerta | alta |
 | Carimbo de tempo, gatilho | só no disparo | Ocorrência | média |
-| Contatos da Rede de Apoio | no cadastro | aparelho + Painel | alta — são **terceiros** |
+| Contatos da Rede de Apoio | no cadastro, digitados ou escolhidos um a um no seletor da agenda (sem `READ_CONTACTS`) | aparelho + Painel | alta — são **terceiros** |
 | Telefones da Rede de Apoio | no pedido de ligação ao Painel ([ADR 0012](../.claude/decisions/0012-ligacao-pelo-painel-e-linha-aberta.md)) | memória do discador do Painel, nunca em `state.bin`; a tela mostra só os 4 últimos dígitos | alta — são **terceiros** |
 
 Dois pontos que costumam passar batido:

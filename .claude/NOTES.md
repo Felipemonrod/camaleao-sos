@@ -283,3 +283,15 @@ parar a sessão armada logo em seguida. Também: SMS sem permissão ou sem conse
 agora fica registrado como `FALHOU` em vez de sumir. Testes unitários passam; nada
 disso foi testado no S25 ainda. APK 0.4.0 publicado na pré-release `v0.4.0-demo` para um
 amigo testar pela página.
+
+## 2026-10-22 (noite) — teste com voz real em casa e 0.5.0
+
+Localização com tela apagada falhava 3 em 5: o `LocationProbe` pedia só ao GPS, que não
+fixa dentro de casa com a tela apagada. Agora pede a fused, rede e GPS juntos (5 em 5).
+A calibração virou "segurar para falar", com porcentagem, e a negativa parecida passou a
+subir um limite pessoal da segunda leitura (`verify`), em vez de travar. Armar agora diz
+o que falta. O ADR 0013 trouxe o modo "só a frase", a posição contínua armada, o SMS
+repetido por 30 min, a agenda com número normalizado (código de operadora e nono
+dígito) e as ligações que param. Pendências reais: ver o fim de docs/09. A
+`stay_on_while_plugged_in` do S25 já era 15 e foi mantida.
+

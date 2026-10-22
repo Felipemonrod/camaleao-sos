@@ -121,6 +121,8 @@ class SentinelaService : Service() {
                     },
                     diagnostics =
                         (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0,
+                    verify = store.verify(),
+                    phraseFires = store.flag("phrase_fires"),
                 )
             if (!running.get()) return
             if (
@@ -157,10 +159,11 @@ class SentinelaService : Service() {
                             configs: MutableList<AudioRecordingConfiguration>
                         ) {
                             if (
-                                configs.any {
-                                    it.clientAudioSessionId == recorder?.audioSessionId &&
-                                        it.isClientSilenced
-                                }
+                                !LiveState.callInProgress &&
+                                    configs.any {
+                                        it.clientAudioSessionId == recorder?.audioSessionId &&
+                                            it.isClientSilenced
+                                    }
                             ) {
                                 store.flag("unexpected_stop", true)
                                 LiveState.status =
@@ -174,6 +177,7 @@ class SentinelaService : Service() {
                     .registerAudioRecordingCallback(callback, LiveState.main)
             }
             wake.acquire(60_000)
+            if (!test) LiveState.main.post { LocationProbe.track(this, store) }
             LiveState.active = true
             LiveState.preparing = false
             LiveState.voicePhase = "WAITING_KEYWORD"
@@ -191,6 +195,11 @@ class SentinelaService : Service() {
                 if (!wake.isHeld) wake.acquire(60_000)
                 val count = audio.read(pcm, 0, pcm.size)
                 if (!running.get()) break
+                // Durante a ligação em linha aberta o microfone é da chamada: espera voltar.
+                if (count <= 0 && LiveState.callInProgress) {
+                    SystemClock.sleep(200)
+                    continue
+                }
                 check(count > 0) { "Captura interrompida" }
                 if (LiveState.cancelCommand) {
                     engine.cancel()
@@ -234,6 +243,7 @@ class SentinelaService : Service() {
             if (wake.isHeld) wake.release()
             if (current === session) {
                 current = null
+                LiveState.main.post { LocationProbe.untrack(this) }
                 LiveState.active = false
                 LiveState.preparing = false
                 store.flag("was_armed", false)
@@ -245,6 +255,8 @@ class SentinelaService : Service() {
 
     override fun onDestroy() {
         running.set(false)
+        br.com.camaleao.sos.sos.OpenLineCall.stop()
+        LocationProbe.untrack(this)
         runCatching { recorder?.stop() }
         recordingCallback?.let {
             getSystemService(AudioManager::class.java).unregisterAudioRecordingCallback(it)

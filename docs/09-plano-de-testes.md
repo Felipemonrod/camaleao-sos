@@ -328,3 +328,27 @@ execuções** do `ScreenOffTest`, ~9 s cada. As correções da
 calibração e da sessão armada passaram só nos testes automáticos; o fluxo pela tela
 (salvar frase nova → 3 positivas → 1 negativa → calibrar → armar logo depois do teste)
 ainda não foi feito à mão.
+
+### Execução de 22/10/2026 — calibração, disparo, agenda e ligação no S25 (debug)
+
+Mudanças: [ADR 0013](../.claude/decisions/0013-disparo-so-com-frase-e-localizacao-continua.md),
+calibração por "segurar para falar" com porcentagem e limite pessoal a partir da
+negativa, `LocationProbe` com vários provedores. Tudo feito pelo responsável no S25,
+com o log `CamaleaoVoz`/`CamaleaoLigacao` acompanhado; `pm clear` ao fim.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Bateria `tools/validar.ps1` no S25 depois das mudanças | aprovada: `OK (15 tests)` (13 + 2 ignorados por regra) e `ScreenOffTest` `OK (2 tests)`; 21 do Painel; unitários e Lint aprovados |
+| Calibração "segurar para falar" | relatada pelo responsável: grava, mostra texto, % e se a Sentinela reconheceria |
+| Negativa parecida com a frase | antes travava a calibração; agora sobe o limite pessoal. Relatado como funcionando |
+| Armar sem autorização de comunicação | o app agora diz o que falta e abre a tela; depois armou |
+| Frase + palavra com voz real | 4 frases aceitas (nota 1,00), mas sem palavra de função na janela, por isso nada disparou. Depois: frase aceita (0,95) seguida de `COMANDO ligacao` |
+| Contato pela agenda | primeiro número recusado (formato da agenda); depois da regra do nono dígito e do preenchimento para correção, aceito e conferido pelo responsável |
+| Ligação em linha aberta (A), número autorizado pelo responsável | 1 chamada de 49 s, encerrada pela regra dos 40 s (provável caixa postal). **`AudioManager.getMode()` vê a chamada no S25**: o ⚠️ da execução anterior está resolvido |
+| Ligação que não parava (relato do responsável, versão anterior) | causa no código: contatos lidos uma vez e parada só pelo estado armado. Corrigido (RF-68) |
+| "Parar ligações" e excluir contato durante as tentativas | **não comprovado**: o responsável relatou que parou, mas o log do aparelho não mostra nova frase nem ligação depois das 18:23 |
+
+**Falta:** a prova de parada com chamada recusada; disparo só com a frase em voz real;
+repetição do SMS (o chip do S25 recusa SMS); bateria com posição contínua (1 h fora do
+carregador); tudo no APK de release.
+

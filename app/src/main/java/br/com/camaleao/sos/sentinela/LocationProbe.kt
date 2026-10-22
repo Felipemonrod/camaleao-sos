@@ -22,6 +22,44 @@ import java.util.concurrent.atomic.AtomicBoolean
 object LocationProbe {
     private const val MAX_AGE_NS = 120_000_000_000L
     private const val GOOD_M = 50f
+    private const val TRACK_MS = 30_000L
+    private var tracker: LocationListener? = null
+
+    /**
+     * Posição contínua enquanto a Sentinela está armada (ADR 0013): a cada 30 s, em
+     * qualidade equilibrada (Wi-Fi e células), só na memória. O alerta já sai com posição
+     * recente. Chamar na thread principal.
+     */
+    fun track(c: Context, store: Store) {
+        if (tracker != null || !allowed(c, store)) return
+        val manager = c.getSystemService(LocationManager::class.java)
+        val listener = LocationListener { l -> if (toPosition(l) != null) LiveState.location = l }
+        try {
+            val enabled = manager.getProviders(true)
+            if (Build.VERSION.SDK_INT >= 31 && LocationManager.FUSED_PROVIDER in enabled) {
+                manager.requestLocationUpdates(
+                    LocationManager.FUSED_PROVIDER,
+                    android.location.LocationRequest.Builder(TRACK_MS)
+                        .setQuality(android.location.LocationRequest.QUALITY_BALANCED_POWER_ACCURACY)
+                        .build(),
+                    c.mainExecutor,
+                    listener,
+                )
+            } else {
+                listOf(LocationManager.NETWORK_PROVIDER, LocationManager.GPS_PROVIDER)
+                    .filter { it in enabled }
+                    .forEach { manager.requestLocationUpdates(it, TRACK_MS, 0f, listener, Looper.getMainLooper()) }
+            }
+            tracker = listener
+        } catch (_: SecurityException) {
+            manager.removeUpdates(listener)
+        }
+    }
+
+    fun untrack(c: Context) {
+        tracker?.let { c.getSystemService(LocationManager::class.java).removeUpdates(it) }
+        tracker = null
+    }
 
     fun permitted(c: Context) =
         c.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
@@ -50,6 +88,13 @@ object LocationProbe {
             LiveState.main.post { done(null) }
             return
         }
+        // Com a Sentinela armada a posição já vem sendo atualizada: usa se for boa e recente.
+        toPosition(LiveState.location)
+            ?.takeIf { it.ageSeconds <= 60 && it.accuracy <= GOOD_M }
+            ?.let {
+                LiveState.main.post { done(it) }
+                return
+            }
         val manager = c.getSystemService(LocationManager::class.java)
         val finished = AtomicBoolean(false)
         val cancels = mutableListOf<CancellationSignal>()

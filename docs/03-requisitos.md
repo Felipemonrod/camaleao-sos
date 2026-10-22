@@ -82,7 +82,7 @@ completa · **P2** = desejável · **P3** = pós-protótipo.
 | RF-52 | Os logs nunca contêm a Frase de Segurança, transcrição completa, GPS ou chaves. | P0 |
 | RF-53 | O app **não** afirma que a gravação é prova judicial válida. Afirma apenas preservar integridade e rastreabilidade. | P0 |
 
-### Funções por voz e Rede de Apoio — ver ADR 0010 e ADR 0012
+### Funções por voz e Rede de Apoio — ver ADR 0010, ADR 0012 e ADR 0013
 
 | ID | Requisito | Pri |
 |---|---|---|
@@ -96,6 +96,11 @@ completa · **P2** = desejável · **P3** = pós-protótipo.
 | RF-61 | Sem Painel, o aparelho envia SMS avisando que vai ligar em silêncio, com a posição, e liga com o volume de chamada no mínimo e o microfone aberto. Ligação de 40 s conta como atendida; as rodadas seguem enquanto a Sentinela estiver armada. | P2 |
 | RF-62 | O registro distingue ligação pedida ao Painel, sem resposta, ligação que durou (pode ser caixa postal) e falha. Atendimento por pessoa não é afirmado. | P0 |
 | RF-63 | Os telefones enviados ao Painel ficam só na memória do discador, nunca no banco do Painel, e o Painel mostra apenas os quatro últimos dígitos. | P0 |
+| RF-64 | O usuário escolhe o modo de disparo: frase + palavra (padrão) ou só a frase, que aciona todas as funções ligadas. Ver ADR 0013. | P1 |
+| RF-65 | Com a Sentinela armada e localização autorizada, a posição é atualizada a cada 30 s, só na memória, e sai do aparelho apenas no alerta ou na função de localização. | P1 |
+| RF-66 | O SMS de alerta se repete a cada 5 min por 30 min com a posição do momento, e para ao desarmar ou cancelar. | P1 |
+| RF-67 | O contato vem do seletor da agenda ou é digitado, e é gravado como `+55DDDNÚMERO`, sem código de operadora. O número final é mostrado para confirmação. | P1 |
+| RF-68 | As ligações em linha aberta param ao desarmar, ao excluir o último contato, pelo botão "Parar ligações" ou após 30 min. | P0 |
 
 ## Requisitos não funcionais
 

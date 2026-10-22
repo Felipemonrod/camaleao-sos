@@ -5,10 +5,13 @@ import android.content.*
 import android.graphics.Color
 import android.net.Uri
 import br.com.camaleao.sos.LiveState
+import br.com.camaleao.sos.domain.PhoneBr
 import br.com.camaleao.sos.domain.PhraseMatcher
 import br.com.camaleao.sos.domain.VoiceCommands
 import br.com.camaleao.sos.sos.Actions
 import br.com.camaleao.sos.sos.*
+import br.com.camaleao.sos.sentinela.PhraseSample
+import br.com.camaleao.sos.sentinela.Stage1
 import java.text.DateFormat
 import java.util.Date
 import org.json.JSONArray
@@ -74,6 +77,11 @@ internal fun MainActivity.home() {
             .isEnabled = !LiveState.preparing
         if (LiveState.voicePhase == "COMMAND_WINDOW")
             button("Cancelar comando pendente", this, true) { LiveState.cancelCommand = true }
+        if (LiveState.callInProgress)
+            button("Parar ligações", this) {
+                OpenLineCall.stop()
+                toast("Sem novas ligações. Encerre a chamada atual na tela de chamada.")
+            }
     }
     if (store.flag("unexpected_stop"))
         card {
@@ -161,6 +169,7 @@ internal fun MainActivity.phrase() {
             store.put("phrase", p)
             store.flag("calibrated", false)
             store.put("threshold", "1.0")
+            store.put("verify", "")
             positives.clear()
             negatives.clear()
             navigate("calibration")
@@ -171,79 +180,141 @@ internal fun MainActivity.phrase() {
 internal fun MainActivity.calibration() {
     heading(
         "Teste antes de armar.",
-        "Fale a Frase de Segurança três vezes, com pequenas pausas. Depois fale uma frase parecida que não deveria disparar.",
+        "Segure o botão, fale e solte, como um áudio de mensagem. Grave a Frase de Segurança três vezes e uma frase parecida uma vez.",
     )
     card {
         addView(text("Frase: ${store.phrase()}", 18, ink, true))
         gap(this, 10)
-        sample =
+        val result = lastSample
+        addView(
             text(
-                LiveState.lastHeard.ifBlank { "Aguardando fala. Nenhuma transcrição é salva." },
+                when {
+                    recordingSample -> "Gravando… solte para analisar."
+                    analyzingSample -> "Analisando no aparelho…"
+                    result == null -> "Nenhuma amostra analisada. O áudio fica só na memória e é apagado depois."
+                    else ->
+                        "Entendi: “${result.heard.ifBlank { "(nada)" }}”\n" +
+                            "${result.percent}% parecido com a frase · " +
+                            if (result.recognized) "a Sentinela reconheceria ✓"
+                            else "a Sentinela não reconheceria ✗"
+                },
                 15,
-                muted,
+                if (result?.recognized == true) green else muted,
             )
-        addView(sample)
+        )
     }
-    button("Iniciar teste de voz offline") { listen(true) }
-    button("Encerrar teste", secondary = true) { stopListening() }
+    holdToTalk()
+    lastSample?.let {
+        button("Era a frase: guardar como positiva") { classify(true) }
+        button("Era outra fala: guardar como negativa", secondary = true) { classify(false) }
+    }
     body.addView(
-        text("Amostras positivas: ${positives.size}/3 · negativas: ${negatives.size}/1", 14, muted)
+        text(
+            "Positivas ${positives.size}/3: ${positives.joinToString { "${it.percent}%" }.ifBlank { "nenhuma" }} · " +
+                "negativas ${negatives.size}/1: ${negatives.joinToString { "${it.percent}%" }.ifBlank { "nenhuma" }}",
+            14,
+            muted,
+        )
     )
-    button("Guardar leitura como positiva", secondary = true) { captureSample(true) }
-    button("Guardar leitura como negativa", secondary = true) { captureSample(false) }
     button("Recomeçar amostras", secondary = true) {
         positives.clear()
         negatives.clear()
+        lastSample = null
         render()
     }
     button("Calcular ajuste e salvar") {
-        val threshold = PhraseMatcher.calibratedThreshold(positives, negatives, store.phrase())
-        if (threshold == null) {
-            toast(
-                if (positives.size < 3 || negatives.isEmpty())
-                    "Faltam amostras: três positivas reconhecidas e uma negativa."
-                else "Uma negativa disparou como a frase. Recomece as amostras ou troque a frase."
-            )
+        if (positives.size < 3 || negatives.isEmpty()) {
+            toast("Faltam amostras: três positivas reconhecidas e uma negativa.")
             return@button
         }
-        store.put("threshold", threshold.toString())
+        val worst = positives.minOf { it.percent }
+        val closest = negatives.maxOf { it.percent }
+        val verify = PhraseMatcher.personalVerify(positives.map { it.percent }, negatives.map { it.percent }, Stage1.VERIFY)
+        if (verify == null) {
+            toast("A frase parecida ficou tão perto da sua frase ($closest% contra $worst%). Troque a Frase de Segurança ou recomece as amostras.")
+            return@button
+        }
+        store.put("verify", verify.toString())
         store.flag("calibrated", true)
-        stopListening()
-        toast("Ajuste local salvo. FAR e FRR ainda precisam de validação real.")
+        toast("Ajuste salvo: a Sentinela exige ${(verify * 100).toInt()}% (sua frase: a partir de $worst%; a parecida: $closest%). FAR e FRR ainda precisam de validação real.")
         navigate("home")
     }
     body.addView(
         text(
-            "Este ajuste não certifica segurança nem estima FAR/FRR. As amostras são texto temporário em memória; áudio não é salvo. Sair do aplicativo limpa as amostras.",
+            "Este ajuste não certifica segurança nem estima FAR/FRR. A porcentagem compara o texto entendido com a frase; a Sentinela aceita a partir de ${(store.verify() * 100).toInt()}% e com a frase inteira, na ordem. Uma negativa que dispara não é perdida: o ajuste passa a exigir mais que ela.",
             13,
             muted,
         )
     )
 }
 
-private fun MainActivity.captureSample(positive: Boolean) {
-    if (
-        !LiveState.active ||
-            LiveState.lastHeard.isBlank() ||
-            capturedSerial == LiveState.sampleSerial
-    ) {
-        toast("Fale novamente e aguarde o resultado antes de guardar.")
+@android.annotation.SuppressLint("ClickableViewAccessibility")
+private fun MainActivity.holdToTalk() {
+    val talk = button(if (recordingSample) "Solte para analisar" else "🎙 Segure para falar") {}
+    talk.setOnTouchListener { _, event ->
+        when (event.actionMasked) {
+            android.view.MotionEvent.ACTION_DOWN -> {
+                if (LiveState.active || LiveState.preparing) {
+                    toast("Desarme a Sentinela antes de testar a frase.")
+                } else if (!analyzingSample && !recordingSample) {
+                    val recorder = PhraseSample()
+                    if (recorder.start(this)) {
+                        phraseSample = recorder
+                        recordingSample = true
+                        talk.text = "Solte para analisar"
+                    } else {
+                        requestPermissions(arrayOf(android.Manifest.permission.RECORD_AUDIO), 1)
+                    }
+                }
+                true
+            }
+            android.view.MotionEvent.ACTION_UP,
+            android.view.MotionEvent.ACTION_CANCEL -> {
+                val recorder = phraseSample
+                if (recordingSample && recorder != null) {
+                    recordingSample = false
+                    phraseSample = null
+                    if (recorder.stop() < 0.8) {
+                        recorder.discard()
+                        toast("Muito curto. Segure enquanto fala a frase inteira.")
+                        render()
+                    } else {
+                        analyzingSample = true
+                        render()
+                        val phrase = store.phrase()
+                        val verify = store.verify()
+                        executor.execute {
+                            val result = runCatching { recorder.evaluate(this, phrase, verify) }.getOrNull()
+                            runOnUiThread {
+                                analyzingSample = false
+                                lastSample = result
+                                if (result == null) toast("Não foi possível analisar. Tente de novo.")
+                                render()
+                            }
+                        }
+                    }
+                }
+                true
+            }
+            else -> true
+        }
+    }
+}
+
+private fun MainActivity.classify(positive: Boolean) {
+    val result = lastSample ?: return
+    if (positive && !result.recognized) {
+        toast("Com essa gravação a Sentinela não dispararia. Grave a frase de novo; nada foi guardado.")
         return
     }
-    // No teste, a Sentinela devolve a própria frase só quando a reconheceu (VoskPipeline).
-    val recognized = PhraseMatcher.recognized(store.phrase(), LiveState.lastHeard)
-    if (positive && !recognized) {
-        toast("A Sentinela não reconheceu esta leitura. Fale a frase de novo; nada foi guardado.")
-        return
-    }
-    capturedSerial = LiveState.sampleSerial
     if (positive) {
-        if (positives.size < 3) positives += LiveState.lastHeard
+        if (positives.size < 3) positives += result
     } else {
-        negatives += LiveState.lastHeard
-        if (recognized)
-            toast("Esta frase parecida disparou: seria um falso alerta. Recomece as amostras ou troque a Frase de Segurança.")
+        negatives += result
+        if (result.recognized)
+            toast("Esta frase parecida dispararia hoje (${result.percent}%). O ajuste vai exigir mais que isso para separar da sua frase.")
     }
+    lastSample = null
     render()
 }
 
@@ -315,14 +386,14 @@ internal fun MainActivity.network() {
 internal fun MainActivity.contacts() {
     heading(
         "Rede de Apoio\ncom consentimento.",
-        "Use apenas participantes que aceitaram o teste. Nenhum contato é importado da agenda.",
+        "Use apenas participantes que aceitaram o teste. Da agenda, o app recebe só o contato que você escolher.",
     )
     val contacts = JSONArray(store.get("contacts", "[]"))
     for (i in 0 until contacts.length()) {
         val c = contacts.getJSONObject(i)
         card {
             addView(text(c.getString("name"), 18, ink, true))
-            addView(text(c.getString("phone"), 14, muted))
+            addView(text(PhoneBr.format(c.getString("phone")), 14, muted))
             button("Remover", this, true) {
                 val next = JSONArray()
                 for (j in 0 until contacts.length()) if (j != i) next.put(contacts.get(j))
@@ -332,18 +403,22 @@ internal fun MainActivity.contacts() {
         }
     }
     if (contacts.length() < 3) {
-        val name = input("Nome ou apelido")
-        val phone = input("Telefone com DDD e país")
-        button("Adicionar participante", secondary = true) {
-            val n = name.text.toString().trim()
-            val p = phone.text.toString().replace(Regex("[\\s()-]"), "")
-            if (n.isBlank() || n.length > 60 || !p.matches(Regex("\\+?[0-9]{10,15}"))) {
-                toast("Informe nome e telefone válidos.")
-                return@button
+        button("Escolher da agenda") {
+            try {
+                picking = true
+                startActivityForResult(
+                    Intent(Intent.ACTION_PICK, android.provider.ContactsContract.CommonDataKinds.Phone.CONTENT_URI),
+                    72,
+                )
+            } catch (_: ActivityNotFoundException) {
+                picking = false
+                toast("Nenhuma agenda disponível. Digite o número abaixo.")
             }
-            contacts.put(JSONObject().put("name", n).put("phone", p))
-            store.put("contacts", contacts.toString())
-            render()
+        }
+        val name = input("Nome ou apelido", draftName)
+        val phone = input("Telefone com DDD, ex.: 11 99999-0000", draftPhone)
+        button("Adicionar participante", secondary = true) {
+            addContact(name.text.toString(), phone.text.toString())
         }
     }
     check(
@@ -368,6 +443,39 @@ internal fun MainActivity.contacts() {
     }
     button("Obter localização agora", secondary = true) { requestLocation() }
     button("Voltar à Sentinela") { navigate("home") }
+}
+
+/**
+ * Confirma o número já normalizado antes de gravar: o código de operadora sai e o
+ * número mostrado é o que vai receber SMS e ligação.
+ */
+internal fun MainActivity.addContact(rawName: String, rawPhone: String) {
+    val n = rawName.trim()
+    val p = PhoneBr.normalize(rawPhone)
+    if (n.isBlank() || n.length > 60 || p == null) {
+        // Leva o que veio da agenda para os campos, para corrigir só o que falta (ex.: DDD).
+        draftName = n.take(60)
+        draftPhone = rawPhone.trim()
+        render()
+        toast(
+            if (n.isBlank()) "Informe um nome para o participante."
+            else "Não reconheci “${rawPhone.trim()}”. Precisa ter DDD + número, ex.: 11 99999-0000. Corrija abaixo."
+        )
+        return
+    }
+    draftName = ""
+    draftPhone = ""
+    val contacts = JSONArray(store.get("contacts", "[]"))
+    if ((0 until contacts.length()).any { contacts.getJSONObject(it).getString("phone") == p }) {
+        toast("Esse número já está na Rede de Apoio.")
+        return
+    }
+    if (contacts.length() >= 3) return
+    confirm("Adicionar $n?", "Número que vai receber SMS e ligação: ${PhoneBr.format(p)}. Confira os dígitos.") {
+        contacts.put(JSONObject().put("name", n).put("phone", p))
+        store.put("contacts", contacts.toString())
+        render()
+    }
 }
 
 internal fun MainActivity.events() {

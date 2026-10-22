@@ -80,4 +80,31 @@ class FunctionsTest {
         // Negativa que disparou como a frase bloqueia o ajuste.
         assertNull(PhraseMatcher.calibratedThreshold(hit, listOf(hit[0]), p))
     }
+
+    @Test
+    fun similarNegativeRaisesThePersonalThreshold() {
+        // Negativa que passaria no padrão (85 % >= 70 %) sobe a exigência para separar.
+        assertEquals(0.9, PhraseMatcher.personalVerify(listOf(95, 100, 96), listOf(85), 0.7)!!, 1e-9)
+        // Negativa distante não baixa a exigência abaixo do piso.
+        assertEquals(0.7, PhraseMatcher.personalVerify(listOf(90, 92, 95), listOf(30), 0.7)!!, 1e-9)
+        assertNull(PhraseMatcher.personalVerify(listOf(88, 100, 95), listOf(88), 0.7))
+        assertNull(PhraseMatcher.personalVerify(listOf(100, 100), listOf(10), 0.7))
+    }
+
+    @Test
+    fun brazilianNumbersLoseCarrierCodeAndKeepDigits() {
+        assertEquals("+5511999990000", PhoneBr.normalize("0 15 11 99999-0000"))
+        assertEquals("+5511999990000", PhoneBr.normalize("(11) 99999-0000"))
+        assertEquals("+5511999990000", PhoneBr.normalize("+55 11 99999-0000"))
+        assertEquals("+5511999990000", PhoneBr.normalize("011 99999-0000"))
+        assertEquals("+5511999990000", PhoneBr.normalize("5511999990000"))
+        assertEquals("+551133334444", PhoneBr.normalize("015 11 3333-4444"))
+        assertEquals("+5555999990000", PhoneBr.normalize("55 99999-0000"))
+        assertNull(PhoneBr.normalize("11 89999-0000"))
+        assertEquals("+5511988887777", PhoneBr.normalize("0 15 11 8888-7777"))
+        assertNull(PhoneBr.normalize("99999-0000"))
+        assertNull(PhoneBr.normalize("11 1234-5678"))
+        assertEquals("+55 (11) 99999-0000", PhoneBr.format("+5511999990000"))
+        assertTrue(AlertMessage.repeat("", null, 2, 6).startsWith("Repetindo (2/6): "))
+    }
 }

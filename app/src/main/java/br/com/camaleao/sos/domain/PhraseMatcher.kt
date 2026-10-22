@@ -66,6 +66,18 @@ object PhraseMatcher {
         return similarity(expected, actual) >= threshold
     }
 
+    /**
+     * Exigência pessoal da segunda leitura, em fração: o meio entre a pior positiva e a
+     * negativa mais parecida, nunca abaixo de [floor]. Null se elas não se separam.
+     */
+    fun personalVerify(positives: List<Int>, negatives: List<Int>, floor: Double): Double? {
+        if (positives.size < 3 || negatives.isEmpty()) return null
+        val worst = positives.min()
+        val closest = negatives.max()
+        if (worst <= closest) return null
+        return maxOf(floor, (worst + closest) / 200.0)
+    }
+
     fun calibratedThreshold(
         positives: List<String>,
         negatives: List<String>,

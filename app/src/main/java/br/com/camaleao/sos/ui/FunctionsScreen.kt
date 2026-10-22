@@ -46,6 +46,20 @@ internal fun MainActivity.functions() {
                 }
         }
     }
+    card {
+        addView(text("Como disparar", 18, ink, true))
+        addView(
+            text(
+                "Frase + palavra: diga a Frase de Segurança e, em até ${VOICE_WINDOW_S} s, a palavra da função (ex.: “enviar alerta”). Mais seguro contra falso alarme.\n" +
+                    "Só a frase: a Frase de Segurança sozinha aciona todas as funções ligadas de uma vez. Mais simples, mas um falso reconhecimento já envia SMS e liga.",
+                13,
+                muted,
+            )
+        )
+    }
+    check("Disparar tudo só com a frase (vale na próxima vez que armar)", store.flag("phrase_fires")) {
+        store.flag("phrase_fires", it)
+    }
     body.addView(text("Mensagem do SMS de alerta", 15, ink, true))
     val message = input("Mensagem", store.get("sms_text", AlertMessage.DEFAULT), multiline = true)
     val minutes = input("Minutos de gravação · 1 a 30", Actions.recordMinutes(store).toString())

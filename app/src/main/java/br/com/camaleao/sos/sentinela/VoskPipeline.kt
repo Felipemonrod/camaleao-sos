@@ -33,6 +33,10 @@ class VoskPipeline(
     private val onPhase: (String) -> Unit,
     /** Só em build debug: eventos e notas para medição com voz real, nunca texto (RF-52). */
     private val diagnostics: Boolean = false,
+    /** Nota mínima da segunda leitura; a calibração pode subir o padrão para esta voz. */
+    private val verify: Double = Stage1.VERIFY,
+    /** Modo escolhido pela usuária: a frase sozinha aciona todas as funções ligadas. */
+    private val phraseFires: Boolean = false,
 ) : AutoCloseable {
     init {
         LibVosk.setLogLevel(LogLevel.WARNINGS)
@@ -87,6 +91,15 @@ class VoskPipeline(
                     else if (ok) "FRASE aceita nota=$lastScore"
                     else "frase recusada na 2a leitura nota=$lastScore"
                 )
+            if (ok && phraseFires) {
+                log("FRASE dispara todas as funções")
+                val enabled = commands.filter { it.enabled }.map { it.action }
+                if (VoiceAction.ALERT in enabled) onPhase(VoicePhase.SOS_EVENT.name)
+                // Alerta primeiro: a ligação, se houver, vem depois do SMS.
+                enabled.sortedBy { it.ordinal }.forEach(onCommand)
+                waiting()
+                return
+            }
             if (ok && flow.open(now)) {
                 recognizer.reset()
                 recognizer.setGrammar(commandGrammar())
@@ -132,7 +145,7 @@ class VoskPipeline(
         ordered.fill(0)
         verifier.reset()
         lastScore = "%.2f".format(java.util.Locale.ROOT, PhraseMatcher.bestWindow(phrase, text))
-        return PhraseMatcher.bestWindow(phrase, text) >= Stage1.VERIFY
+        return PhraseMatcher.bestWindow(phrase, text) >= verify
     }
 
     private var lastScore = ""

@@ -86,6 +86,7 @@ fechada nos documentos acima** — aponte para o ADR.
 | [0010](.claude/decisions/0010-palavra-por-funcao-e-sms-automatico.md) | Palavra por função na janela de comando; SMS automático à Rede de Apoio | aceito |
 | [0011](.claude/decisions/0011-estagio-1-com-iscas-e-segunda-leitura.md) | Estágio 1 com iscas na gramática e segunda leitura do Buffer pré-evento | aceito, condicionado à medição com voz real |
 | [0012](.claude/decisions/0012-ligacao-pelo-painel-e-linha-aberta.md) | Ligação pelo Painel com voz e, sem Painel, linha aberta no aparelho | aceito, condicionado ao teste no S25 e no aparelho de discagem |
+| [0013](.claude/decisions/0013-disparo-so-com-frase-e-localizacao-continua.md) | Disparo só com a frase, localização contínua armada e alerta repetido | aceito, condicionado à medição de bateria e falso alarme |
 
 **Anotações cronológicas** do dia a dia vão em [`.claude/NOTES.md`](.claude/NOTES.md).
 

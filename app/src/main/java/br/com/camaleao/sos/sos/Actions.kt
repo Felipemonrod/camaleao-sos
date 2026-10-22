@@ -47,18 +47,45 @@ object Actions {
                 {
                     worker.execute {
                         if (store.record(id)?.optBoolean("cancelled") == true) return@execute
-                        EmergencySms.send(
-                            app,
-                            store,
-                            "alerta",
-                            AlertMessage.alert(store.get("sms_text", AlertMessage.DEFAULT), position),
-                        )
+                        val sent =
+                            EmergencySms.send(
+                                app,
+                                store,
+                                "alerta",
+                                AlertMessage.alert(store.get("sms_text", AlertMessage.DEFAULT), position),
+                            )
+                        if (sent > 0) repeatAlert(app, store, id, 1)
                     }
                 },
                 maxOf(0L, due - System.currentTimeMillis()),
             )
         }
         return id
+    }
+
+    /** Repetições do SMS de alerta: a cada 5 min por 30 min, ou até desarmar. */
+    const val ALERT_REPEATS = 6
+
+    /** Repete o alerta com a posição atual, para quem não viu o primeiro SMS. */
+    private fun repeatAlert(app: Context, store: Store, id: String, n: Int) {
+        if (n > ALERT_REPEATS) return
+        LiveState.main.postDelayed(
+            {
+                if (LiveState.active && store.record(id)?.optBoolean("cancelled") != true)
+                    LocationProbe.request(app, store, 10_000) { position ->
+                        worker.execute {
+                            EmergencySms.send(
+                                app,
+                                store,
+                                "alerta $n/$ALERT_REPEATS",
+                                AlertMessage.repeat(store.get("sms_text", AlertMessage.DEFAULT), position, n, ALERT_REPEATS),
+                            )
+                        }
+                        repeatAlert(app, store, id, n + 1)
+                    }
+            },
+            UPDATE_MS,
+        )
     }
 
     private val calling = AtomicBoolean(false)
