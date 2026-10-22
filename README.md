@@ -9,10 +9,14 @@ Aplicativo de proteção discreta para situações de violência doméstica. Int
 camuflada de calculadora, múltiplos gatilhos de coação, e detecção de uma **frase de
 segurança** sem enviar áudio para a nuvem.
 
-**Estado:** documentação completa, implementação não iniciada.
+**Estado:** implementação Android e Painel local; consulte o [estado verificado](docs/08-plano-prototipo.md#estado-da-implementação).
 **Protótipo:** Kotlin nativo, Android apenas, custo zero em software e serviços.
 
 ---
+
+## Executar o protótipo
+
+Instalação do APK, primeiro acesso pela calculadora, pareamento HTTPS, compilação e roteiro estão em [docs/08](docs/08-plano-prototipo.md#executar-a-versão-implementada).
 
 ## 📍 Comece por aqui
 

@@ -48,7 +48,7 @@ Montado o SOT: 11 documentos em `docs/`, 7 ADRs, requisitos numerados RF/RNF/CR.
 
 1. **Tarefa 1.1**: `vosk-model-small-pt-0.3` aceita `SetGrm`? Responde Q4 e valida o
    ADR 0002. Primeira linha de código do projeto.
-2. Decidir Q1 (texto da notificação do FGS) com a orientação — bloqueia a Fatia 2.
+2. Decidir o texto da notificação (decisão posterior no ADR 0009) (texto da notificação do FGS) com a orientação — bloqueia a Fatia 2.
 3. Conseguir o documento do hackathon.
 
 ---
@@ -122,7 +122,7 @@ A regra da seção: cortar é obrigatório, mentir sobre o corte não é.
 2. Definir a licença do repositório antes de torná-lo público — está marcada com ⚠️ no
    README.
 3. Conseguir o documento do hackathon.
-4. Decidir Q1 (texto da notificação do FGS) — bloqueia D5.
+4. Decidir o texto da notificação (decisão posterior no ADR 0009) (texto da notificação do FGS) — bloqueia D5.
 
 ---
 
@@ -161,3 +161,37 @@ para explicar à banca por que o Camaleão **não** pode prometer o mesmo.
 Buscar "Clique 180" nas duas lojas. Cinco minutos, e decide se podemos citá-lo na
 apresentação — além de gerar evidência sobre a camuflagem passar ou não pela revisão da
 Apple (regra 2.5.14, nosso R4).
+
+## 2026-10-21 — Implementação Android e Painel local
+
+Implementação na branch `feat/app-android-funcional`. Escopo executável e roteiro no
+[estado da implementação](../docs/08-plano-prototipo.md#estado-da-implementação).
+Resultados verificáveis no [registro de execução](../docs/09-plano-de-testes.md#registro-de-execução).
+A decisão humana sobre notificação e cancelamento foi registrada no
+[ADR 0009](decisions/0009-notificacao-e-cancelamento-protegido.md); apontadores atualizados.
+A observação de gramática apoia o ADR 0002; a questão experimental continua em revisão
+formal do time. As referências de origem e os ADRs aceitos anteriores foram preservados.
+
+Revisão final: migração de atualização verificada e registrada nos documentos donos
+[07](../docs/07-privacidade-lgpd.md#controles-entregues-e-limites-pendentes) e
+[09](../docs/09-plano-de-testes.md#registro-de-execução). A entrega permanece local,
+conforme escolha explícita do responsável; sem publicação remota.
+
+## 2026-10-22 — Preparação para publicação no GitHub
+
+O responsável autorizou publicar os fontes em uma nova branch do repositório
+Felipemonrod/camaleao-sos. A cópia de Downloads foi comparada com os arquivos
+versionados da área de trabalho antes da preparação.
+
+As exclusões de publicação estão em [`.gitignore`](../.gitignore), incluindo
+dependências Node.js, segredos, dados locais e modelos de voz. O Gradle Wrapper
+permanece versionado. A branch de publicação parte da implementação local e mantém
+o histórico da documentação existente; a branch principal não é alterada.
+
+## 2026-10-22 — Correção da preparação do Android no CI
+
+A primeira execução remota parou em `setup-android`, ao tentar instalar o pacote
+`tools` da configuração padrão da action. A lista de pacotes em
+[`android.yml`](../.github/workflows/android.yml) passa a indicar os componentes
+usados pela compilação. O resultado da execução original está no
+[job do GitHub Actions](https://github.com/Felipemonrod/camaleao-sos/actions/runs/39777720370/job/119820816885).

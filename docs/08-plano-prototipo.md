@@ -293,3 +293,117 @@ perguntado é a diferença entre um protótipo e uma demonstração.
 demonstração.** Não "qualquer frase, qualquer voz, qualquer aparelho, qualquer
 ambiente". Essa é a diferença entre um protótipo defensável e uma promessa que a
 primeira pergunta da banca derruba.
+
+## Executar a versão implementada
+
+### Instalação e primeiro acesso
+
+O APK debug é gerado em `app/build/outputs/apk/debug/app-debug.apk`; a cópia de
+entrega fica em `artifacts/Camaleao-SOS-v0.2-debug.apk`. Requer Android 8/API 26+
+com ABI arm64-v8a ou x86_64. É distribuição de desenvolvimento, não versão de loja.
+
+1. Instale o APK. O nome na lista de aplicativos é **Cálculos**.
+2. Na calculadora, digite **2580** e toque em **=**, somente na configuração inicial.
+3. Cadastre códigos diferentes de acesso e de coação, com 6–12 dígitos. O código
+   inicial deixa de funcionar depois disso. O código de acesso abre a Área protegida;
+   o de coação prepara a Ocorrência mantendo a Fachada.
+4. Escolha a Frase de Segurança e faça as três leituras positivas e uma negativa.
+   Diga a frase, aguarde o reconhecimento e guarde cada leitura. Frases sem separação
+   textual suficiente são recusadas. O ajuste não certifica segurança.
+5. Em Rede de Apoio, cadastre somente participantes consentidos e autorize comunicação.
+   Localização e lembrete após reiniciar são escolhas separadas.
+6. Pareie o Painel, autorize microfone/notificações e arme a Sentinela.
+
+O áudio não é enviado; o modelo está no APK. A primeira escuta copia o modelo para
+armazenamento privado. Espere o estado de microfone ativo antes de falar.
+
+### Painel local, sem serviços pagos
+
+Pré-requisitos: Node.js 20+ e OpenSSL. No Windows, o script detecta o OpenSSL do Git;
+em outra instalação defina `OPENSSL` com o caminho do executável.
+
+```text
+cd server
+npm run setup
+npm start
+```
+
+O setup cria certificados e segredos próprios em `server/certs` e `server/data`,
+ignorados pelo Git. Mostra URL, acesso do Painel e código de pareamento Android.
+Não compartilhe esses arquivos com terceiros nem os publique. O notebook e o celular
+devem estar na mesma rede; permita apenas o acesso local necessário à porta TCP 8443.
+O certificado inclui os IPs encontrados no setup; mudar a rede pode exigir novo
+certificado e revisão do pareamento. O ciclo de rotação não é automático.
+
+Abra a URL no navegador e confira o fingerprint do certificado local antes de
+confiar nele manualmente. Insira o acesso do Painel. No Android, cole o código de
+pareamento; para o emulador use URL alternativa `https://10.0.2.2:8443`.
+O código não é um QR pronto: é uma configuração codificada para copiar e colar.
+
+Use **Enviar teste identificado ao Painel** para verificar a entrega. O registro
+contém `test=true` e não leva GPS. O Painel exibe a Ocorrência e emite recibo; o
+Android só confirma depois de verificar sua assinatura.
+
+### Compilação reproduzível
+
+JDK 17 ou 21, Android SDK 36. Configure `local.properties` ou `ANDROID_HOME`.
+A primeira compilação exige rede para dependências fixadas e o modelo aprovado.
+
+```text
+python tools/preparar-modelos.py
+./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+node server/setup.mjs
+node --test server/test/*.test.mjs
+python tools/verificar-sot.py
+```
+
+No Windows use `gradlew.bat`. O modelo é ignorado pelo Git e validado pelo script;
+a distribuição ZIP pode incluí-lo para compilação sem novo download do modelo.
+Licenças de terceiros estão em `app/src/main/assets/licenses`. A licença institucional
+do código continua conforme a pendência do README.
+
+Testes Android usam emulador dedicado. `tools/gerar-amostras.ps1` gera fixtures
+sintéticas com voz pt-BR instalada no Windows; estas não são gravações de pessoas.
+O executor recebe `pairing` do servidor local. A opção `toggleNetwork=true` autoriza
+os testes a desligar/religar Wi-Fi e dados **do emulador**; não execute em aparelho
+pessoal. Evidências e cobertura são de [docs/09](09-plano-de-testes.md#registro-de-execução).
+
+### Roteiro operacional da entrega
+
+1. Faça uma conta; entre com seu código de acesso.
+2. Teste a Frase de Segurança em modo teste: nenhuma Ocorrência é criada.
+3. Mostre o pareamento e envie um teste identificado ao Painel.
+4. Sem conexão, crie outro teste: mostre a fila, sem confirmação de recebimento.
+   Restabeleça a rede e aguarde o recibo verificável.
+5. Em teste de voz previamente calibrado, arme e fale a frase. Diga `enviar alerta`
+   na janela de comando. Sem comando válido, nada é transmitido.
+6. Abra a Área protegida e cancele uma preparação antes de entrar na fila.
+   Um recebimento anterior não pode ser desfeito.
+7. Reinicie o celular: estado desarmado e lembrete de rearme. Arme manualmente.
+8. Desarme ao finalizar a apresentação.
+
+## Estado da implementação
+
+O código operacional está em `app/src/main/java/br/com/camaleao/sos/` e `server/`.
+Os resultados realmente executados e as saídas ficam em
+[docs/09](09-plano-de-testes.md#registro-de-execução); nenhum critério de saída físico
+foi marcado como concluído por existir código.
+
+| Parte | Estado de entrega |
+|---|---|
+| Fachada e Área protegida | calculadora, códigos configuráveis, limpeza ao sair e proteção de captura |
+| Atualização do primeiro protótipo | migração verificada; limites em [docs/07](07-privacidade-lgpd.md#controles-entregues-e-limites-pendentes) |
+| Voz | Vosk PT em dois estágios, teste sem Protocolo SOS e ajuste por amostras |
+| Ciclo de vida | FGS, notificação, sinal de vida, liberação de captura e lembrete após boot |
+| Ocorrência | conteúdo cifrado, manifesto assinado/encadeado, quatro estados e auditoria |
+| Transporte | HTTPS, pareamento, fila persistente, retry e recibo verificável |
+| Painel | autenticação e atualização por SSE; recebimento técnico, sem promessa de atendimento |
+| Comunicação alternativa | compositor SMS manual para participante escolhido; sem afirmar envio/entrega |
+| Localização | obtenção pontual na Área protegida; inclusão de posição recente consentida, sem rastreamento em background |
+| Não entregue | RF-31 depende de Q5; evidência de áudio depende de J1; vínculo criptográfico de C4 e retenção automática pendentes |
+| Não homologado | FAR/FRR, bateria, 30 minutos bloqueado, três aparelhos, iOS e operação real de atendimento |
+
+A gravação pós-disparo está desabilitada conforme o estado jurídico; não existe
+botão que apresente gravação simulada como real. O protótipo pode ser apresentado
+como fluxo operacional testado nas condições registradas, **não como 100% dos
+requisitos de segurança e confiabilidade homologados**.

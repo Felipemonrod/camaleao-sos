@@ -184,3 +184,73 @@ data | ambiente | distancia | tentativa | frase_dita | detectou | score | latenc
 
 Dados brutos, não resumo. O resumo se recalcula; o dado bruto perdido não volta — e é
 dele que sai a calibração do limiar e o gráfico da apresentação.
+
+## Registro de execução
+
+Ambiente: Windows, JDK 21.0.12, Gradle 8.13, AGP 8.13.0, Kotlin 2.2.20,
+compile/target SDK 36. Emulador AOSP Android 15/API 35 x86_64, perfil Pixel 6,
+aceleração WHPX. Data de entrega: 21/10/2026, America/Sao_Paulo.
+
+| Verificação executada | Resultado observado | Evidência local |
+|---|---|---|
+| Compilação Android debug | aprovada | `artifacts/final-build.txt` |
+| Testes unitários de domínio | 8 aprovados, zero falhas | relatório Gradle `testDebugUnitTest` |
+| Testes HTTPS/criptografia do servidor | 8 aprovados, zero falhas | `artifacts/server-tests.txt` |
+| Testes instrumentados do Android | 11 aprovados, zero falhas, sem ignorados | `artifacts/device-tests-final.txt` |
+| Android Lint | 0 erros, 15 avisos | `artifacts/lint.html` |
+| Assinatura e alinhamento do APK | assinatura debug v2 e ZIP 16 KiB aprovados | `artifacts/apk-verification.txt` |
+| Invariantes documentais | 10 verificações, zero avisos | `artifacts/sot.txt` |
+| Reinício real do emulador | lembrete de rearme; nenhum serviço de microfone | `artifacts/boot-notifications.txt`, `artifacts/boot-services.txt` |
+
+Os avisos do Lint incluem versões mais recentes de dependências, literais pt-BR,
+sugestões de extensões Kotlin e o `X509TrustManager` do pareamento local. O último
+é deliberado e foi exercitado com certificado correto e pin incorreto; não é um
+`trust-all`. Usa fingerprint exato, validade do certificado e verificação padrão de
+hostname. Não há baseline nem configuração para ignorar erros.
+
+### O que os testes provaram
+
+- Quatro operações e precedência na Fachada; entrada da Área protegida por código;
+  `FLAG_SECURE` na Área protegida e retorno à Fachada ao sair do aplicativo.
+- Criptografia AES-GCM, detecção de adulteração e assinatura ECDSA verificável.
+- Migração das preferências do primeiro protótipo para arquivo cifrado antes da
+  limpeza; frase preservada e novos consentimentos de comunicação não presumidos.
+- Cancelar a preparação não consome sequência do manifesto e não permite cancelar
+  uma Ocorrência depois de ela entrar na fila.
+- A gramática Vosk foi criada e reconfigurada no modelo incluído. A amostra
+  **sintética** positiva abriu a janela de comando, sem enviar sozinha; o comando
+  sintético confirmou o evento; o negativo sintético do roteiro não abriu janela.
+- O serviço abriu `AudioRecord` e permaneceu ativo ao mover a Activity para
+  background por alguns segundos. Não foi um ensaio de 30 minutos bloqueado.
+- Android pareou por HTTPS, manteve `QUEUED` em falha de transporte, verificou o
+  recibo real do Node e chegou a `ACKNOWLEDGED`. Um segundo manifesto preservou a cadeia.
+- A preparação automática transmitiu um teste após sua fase local; uma preparação
+  cancelada não entrou na fila.
+- No emulador, Wi-Fi e dados foram desligados: a fila permaneceu `QUEUED`. Ao religar,
+  o retry automático chegou a `ACKNOWLEDGED`, sem tocar novamente no aplicativo.
+- Pin incorreto impediu o pareamento. O servidor rejeitou autenticação incorreta,
+  assinatura inválida e buraco na cadeia; repetição retornou o mesmo recibo.
+- Receiver testado isoladamente e reinício completo testado depois: não houve
+  microfone no boot. O lembrete convida a rearmar manualmente.
+
+### Limites da evidência
+
+Os testes instrumentados usam fala sintetizada por voz Windows pt-BR e executam o
+motor nativo real. Não são medição de acurácia com pessoas, sotaques, sussurro,
+televisão, telefone no bolso ou distâncias. Não foram cumpridos os conjuntos longos
+de FAR/FRR, a matriz de três aparelhos, bateria, termal, RSS por classe de aparelho
+nem o baseline whisper.cpp.
+
+T-07 foi exercitado em emulador. T-08 foi exercitado com desligamento dos dois
+transportes do emulador e retorno de conectividade, sem afirmar comportamento de
+rádio de todos os aparelhos. Os demais cenários manuais continuam pendentes, salvo
+as partes explicitamente observadas acima. A navegação do Painel em navegador foi
+interrompida por certificado local não confiado; não foi contornada a advertência.
+Os testes HTTPS do servidor e do Android passaram. A revisão visual do Painel com
+certificado confiado pelo operador continua manual.
+
+A obtenção de GPS físico, SMS entregue, botão físico bloqueado, interrupção por
+chamada/Bluetooth, biometria e avaliação jurídica não foram declarados aprovados.
+As capturas Android em `artifacts/screenshots` são reais; o teste remove `FLAG_SECURE`
+apenas na sua própria sessão para fotografar telas sem dados pessoais. O APK não
+contém opção para desabilitar essa proteção.

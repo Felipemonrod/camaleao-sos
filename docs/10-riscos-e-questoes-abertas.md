@@ -5,38 +5,6 @@ documento e vira um ADR em [`.claude/decisions/`](../.claude/decisions/).
 
 ## Questões abertas
 
-### Q1 — A notificação obrigatória delata a usuária?
-
-O Android exige notificação persistente no Foreground Service; o iOS mostra indicador
-laranja; as lojas exigem indicação clara de captura de microfone. Para o
-[modelo de ameaça](02-modelo-de-ameaca.md), isso é exatamente o que pode expor a
-usuária ao agressor que olha o telefone.
-
-**Tensão genuína, sem solução limpa.** Opções:
-
-| Opção | Custo |
-|---|---|
-| Notificação discreta e coerente com a Fachada | pode ser lida como enganosa pelas lojas |
-| Notificação honesta e explícita | expõe a usuária |
-| Sentinela armada só por janelas curtas, sob demanda | reduz exposição, reduz proteção |
-
-**Decide:** time + orientação. **Bloqueia:** Fatia 2, tarefa 2.3.
-
-### Q2 — Existe cancelamento seguro de um disparo?
-
-Contagem regressiva visível informa o agressor e pode ser cancelada por ele.
-Cancelamento invisível é indistinguível, para a usuária, de um sistema que não
-disparou. Ver [C3](02-modelo-de-ameaca.md).
-
-**Hipótese a avaliar:** não oferecer cancelamento por interface; em vez disso, reduzir
-o FAR até que cancelamento seja desnecessário. Isso joga todo o peso em RNF-03 — o
-que é aceitável porque os gatilhos alternativos (ADR 0005) dão à usuária outro
-caminho.
-
-Se o cancelamento existir, o comando **nunca** é a Frase de Segurança (RF-38).
-
-**Decide:** time, com quem entende de atendimento a vítimas. **Bloqueia:** Fatia 3.
-
 ### Q3 — O áudio pós-disparo deve existir?
 
 Grava o agressor sem ciência dele. Depende de [J1](07-privacidade-lgpd.md).
@@ -118,7 +86,7 @@ Prioridade, impacto e mitigação. A tabela consolida os dois documentos de refe
 | **R1 — Não existe modelo KWS sherpa pt-BR** | bloqueia keyword portuguesa confiável na arquitetura alvo | Vosk + gramática como estágio 1 do protótipo (ADR 0002); modelo pt-BR a partir de Common Voice CC0 como trabalho posterior |
 | **R2 — Android não religa FGS de microfone após boot** | proteção fica inativa após reboot | restaurar configuração + notificação obrigatória de rearme (RF-28); **nunca** exibir "armada" |
 | **R3 — iOS não oferece daemon de boot para esse caso** | paridade "Ok Google" impossível para app comum | assumir reativação manual e comunicar o estado real |
-| **R4 — Gravação totalmente oculta viola requisito publicado da App Store** | distribuição inviável no iOS | consentimento e indicador conforme 2.5.14; RNF-09; ver Q1 |
+| **R4 — Gravação totalmente oculta viola requisito publicado da App Store** | distribuição inviável no iOS | consentimento e indicador conforme 2.5.14; RNF-09; ver ADR 0009 |
 
 ### Altos
 

@@ -112,3 +112,55 @@ As duas pesquisas citam um **documento de proposta do hackathon**
 (`fileciteturn0file0`) que não veio em nenhuma das exportações. Sem ele, a visão de
 produto em `docs/00` é reconstrução, não citação. Conseguir esse arquivo é a pendência
 mais barata e mais valiosa da lista.
+
+## 2026-10-21 — Sessão de implementação com Codex
+
+**Solicitação humana:** continuar a criação do protótipo no repositório informado,
+com aplicativo funcional. O responsável aprovou notificação clara de microfone ativo
+e cancelamento dentro da Área protegida; decisão em ADR 0009.
+
+**Trabalho realizado:** código Android Kotlin, motor Vosk em dois estágios, fila
+cifrada, manifesto/recibo, servidor HTTPS local, testes, bootstrap de modelos e CI.
+Detalhes de entrega pertencem a [docs/08](docs/08-plano-prototipo.md#estado-da-implementação);
+resultados observados pertencem a [docs/09](docs/09-plano-de-testes.md#registro-de-execução).
+
+**Uso de ferramentas:** compilação Gradle e Android Lint, testes unitários Kotlin,
+instrumentação em emulador, testes Node, leitura das fontes primárias Android e
+Vosk, geração de amostras de voz sintética locais. Não houve gravação de terceiros
+nem envio de SMS para participantes reais. A sessão não resolve as pendências
+jurídicas, a licença institucional, as métricas físicas ou a decisão do botão físico.
+
+**Revisão humana necessária:** comportamento e segurança em aparelhos reais,
+validação de vítimas/atendimento, conformidade jurídica e os limites de hardening
+registrados em [docs/07](docs/07-privacidade-lgpd.md#controles-entregues-e-limites-pendentes).
+A implementação não foi declarada homologada por existir código ou por passar
+em testes sintéticos. Não foi adicionada atribuição de IA em commit ou PR.
+
+Na revisão final, foi acrescentada a migração do primeiro protótipo e seu teste de
+regressão; controles em [docs/07](docs/07-privacidade-lgpd.md#controles-entregues-e-limites-pendentes).
+O responsável escolheu manter somente os arquivos locais. Nenhum commit foi enviado
+ao repositório remoto.
+
+## 2026-10-22 — Preparação de publicação com Codex
+
+**Solicitação humana:** inspecionar a pasta local, configurar o `.gitignore` e
+publicar o aplicativo Android e o servidor Node.js no repositório informado,
+em uma nova branch, preservando a documentação existente.
+
+**Trabalho realizado:** comparação dos fontes de Downloads com a cópia da área de
+trabalho, revisão dos arquivos versionados e do histórico local a enviar, ajuste
+das exclusões de publicação e validação das regras de inclusão e exclusão.
+As regras ficam em [`.gitignore`](.gitignore).
+
+Esta sessão não altera requisitos, ADRs ou decisões de produto. A nova autorização
+de publicação substitui a escolha de entrega somente local registrada na sessão
+anterior.
+
+## 2026-10-22 — Correção do CI com Codex
+
+**Solicitação humana:** investigar a falha de validação apresentada na captura do
+GitHub Actions. Foram lidos os logs remotos, a definição da action e a tabela
+oficial de compatibilidade do AGP. A lista de pacotes do SDK foi explicitada no
+workflow, sem alteração do aplicativo ou das decisões de produto.
+
+Diagnóstico e execução original: [anotação da sessão](.claude/NOTES.md#2026-10-22--correção-da-preparação-do-android-no-ci).

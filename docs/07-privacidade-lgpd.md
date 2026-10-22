@@ -92,7 +92,7 @@ indicação é justamente o que pode denunciar a usuária ao agressor.
    que isso é visível para quem olhar o aparelho. É informação de **segurança dela**,
    não letra miúda.
 
-Essa tensão fica registrada como [Q1](10-riscos-e-questoes-abertas.md) e é um ótimo
+A decisão operacional sobre essa tensão está no [ADR 0009](../.claude/decisions/0009-notificacao-e-cancelamento-protegido.md) e é um ótimo
 assunto para a defesa do projeto: demonstra que o time entendeu que os interesses
 legítimos aqui conflitam.
 
@@ -156,3 +156,44 @@ de integridade e rastreabilidade, e que o uso jurídico depende do caso concreto
 
 O precedente torna J1 menos bloqueante do que parecia, mas não dispensa a consulta:
 há faculdade de Direito na instituição. Este SOT não arrisca palpite sobre lei.
+
+## Controles entregues e limites pendentes
+
+`DeviceCrypto` cifra os conteúdos sensíveis dos registros SQLite e as configurações
+com AES-GCM. Cada envelope tem chave de dados aleatória, protegida por chave AES do
+Android Keystore. A assinatura é ECDSA P-256/SHA-256; a chave privada não é exportada
+pela aplicação. Esses mecanismos usam as APIs do
+[Android Keystore](https://developer.android.com/privacy-and-security/keystore).
+
+O arquivo SQLite contém IDs e sequência, com o conteúdo cifrado em cada registro;
+não é SQLCipher nem criptografia do arquivo SQLite inteiro. O segredo da Área
+protegida é verificado com PBKDF2 e limitação de tentativas. O bloqueio de tentativas
+de acesso não impede o código de coação. A chave de dados não é derivada desse
+segredo: **o vínculo exigido em C4 ainda não foi entregue**. O recebimento em
+background usa a chave do Keystore sem pedir novo código. Isso mantém a fila
+autônoma, mas deixa essa parte do hardening pendente; não foi declarada conforme.
+
+A Área protegida usa `FLAG_SECURE`, volta à Fachada limpa ao sair do aplicativo e
+mostra Ocorrências somente mediante navegação explícita. A exportação pede ação e
+confirmação e gera arquivo potencialmente sensível. Excluir recebidas remove as
+linhas locais e mantém o encadeamento; não promete apagamento físico da memória
+flash nem remove cópias do Painel. Retenção automática configurável ainda é pendente.
+
+O Painel requer segredo de acesso, pareamento de chave pública e token de dispositivo.
+O certificado TLS é fixado no Android por fingerprint informado no pareamento;
+certificado divergente é recusado. O navegador exige validação manual do certificado
+local. Os dados do Painel são cifrados em disco, mas a chave fica no notebook:
+o operador e as permissões desse computador fazem parte da fronteira de confiança.
+Não há serviço público, hospedagem externa, conta na nuvem ou chamada automática.
+
+A revogação do consentimento de comunicação pausa a fila real nas próximas
+transmissões. Não desfaz transmissões já realizadas. Revogar localização impede
+incluí-la em novas Ocorrências; registros já assinados preservam seu conteúdo.
+Para suspender a transmissão de registros pendentes, revogue a comunicação.
+As pendências J1 a J5 continuam abertas. A evidência de áudio permanece desabilitada.
+
+Ao atualizar o primeiro protótipo, `LegacyMigration` preserva suas preferências em
+um arquivo cifrado no Store e verifica a leitura antes de limpar as preferências
+antigas. A frase e os contatos são reaproveitados; comunicação, localização e
+calibração exigem nova configuração. A limpeza não garante apagamento físico de
+blocos antigos da memória flash.

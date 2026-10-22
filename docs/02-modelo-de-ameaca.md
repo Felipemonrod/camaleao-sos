@@ -59,14 +59,10 @@ não se deve prometer microfone clandestino. Mas para o modelo de ameaça acima,
 notificação persistente dizendo qualquer coisa suspeita **é o pior vazamento do
 sistema**, porque fica visível 100% do tempo em que a proteção está ativa.
 
-Portanto: o texto e o ícone da notificação são uma **decisão de segurança**, não de
-UX. Ela deve ser coerente com a Fachada ("Calculadora — sessão ativa", ícone da
-calculadora) e **nunca** mencionar proteção, voz, SOS ou emergência.
-
-⚠️ Isto esbarra na política de lojas, que exige indicação clara de captura de
-microfone. É uma tensão genuína entre **segurança da usuária** e **transparência de
-plataforma**, e não tem solução limpa. Está registrada como questão aberta
-[Q1](10-riscos-e-questoes-abertas.md).
+O texto e o ícone são uma decisão de segurança. O comportamento aprovado para o
+protótipo está no [ADR 0009](../.claude/decisions/0009-notificacao-e-cancelamento-protegido.md).
+A indicação honesta do microfone pode revelar a captura ao agressor; a Área protegida
+informa esse custo. A Fachada não torna o uso do hardware invisível.
 
 ### C2 — Falso positivo é incidente de segurança, não bug de qualidade
 
@@ -85,13 +81,13 @@ prefere errar para o lado de não disparar. Ver
 ### C3 — Não existe cancelamento seguro
 
 O reflexo natural é oferecer "SOS enviado — cancelar em 10s". **Não faça isso sem
-decidir Q2.** Uma contagem visível na tela:
+definir o cancelamento conforme ADR 0009.** Uma contagem visível na tela:
 
 - informa o agressor, se ele estiver olhando;
 - pode ser cancelada *por ele*, se ele pegar o telefone.
 
 E um cancelamento invisível é indistinguível, para a usuária, de um sistema que não
-disparou. Está em aberto como [Q2](10-riscos-e-questoes-abertas.md).
+disparou. O comportamento autorizado está no [ADR 0009](../.claude/decisions/0009-notificacao-e-cancelamento-protegido.md).
 
 ### C4 — O histórico local precisa ser negável ou ausente
 
