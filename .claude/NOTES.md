@@ -234,3 +234,13 @@ Ambiente: notebook `desktop-6gaa1oa` acessível por SSH via Tailscale com chave 
 `C:\Users\felipe\Documents\camaleao-sos` (cópia de arquivos, não clone do Git); firewall
 8443 liberado só em rede Privada. Corpus e avaliador de voz em `tools/voz/`
 (dados em `dados-brutos/`, ignorado).
+
+### Página da banca (feito depois da passagem)
+
+Página com QR em https://felipemonrod.github.io/camaleao-sos/ (branch `gh-pages`, só o
+site; não publica `docs/`). APK de release 0.3.0 na pré-release `v0.3.0-demo`, SHA-256
+`b390c1c0…aff715`. Assinatura: chave em `~/.camaleao/release.jks`, senha em
+`keystore.properties` (ambos fora do Git, só no PC do responsável — **fazer backup**: sem
+essa chave, uma nova versão exige desinstalar a anterior). O build release não é
+depurável: modo apresentação e log de diagnóstico ficam desligados. Instalação num
+celular sem modo desenvolvedor ainda não testada (risco de Play Protect).
