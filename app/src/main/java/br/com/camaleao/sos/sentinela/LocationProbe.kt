@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 object LocationProbe {
     private const val MAX_AGE_NS = 120_000_000_000L
+    private const val GOOD_M = 50f
 
     fun permitted(c: Context) =
         c.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
@@ -37,7 +38,13 @@ object LocationProbe {
         return Position(l.latitude, l.longitude, l.accuracy, age / 1_000_000_000)
     }
 
-    /** Chama [done] uma única vez, na thread principal, com a posição ou null. */
+    /**
+     * Chama [done] uma única vez, na thread principal, com a posição ou null.
+     *
+     * Pede a todos os provedores ao mesmo tempo. Só GPS falhava dentro de casa com a tela
+     * apagada: sem fix em 15 s, a posição dependia de haver leitura recente por acaso.
+     * Responde já com precisão de até [GOOD_M]; senão espera o prazo e fica com a melhor.
+     */
     fun request(c: Context, store: Store, timeoutMs: Long = 12_000, done: (Position?) -> Unit) {
         if (!allowed(c, store)) {
             LiveState.main.post { done(null) }
@@ -45,43 +52,61 @@ object LocationProbe {
         }
         val manager = c.getSystemService(LocationManager::class.java)
         val finished = AtomicBoolean(false)
-        var cancel: CancellationSignal? = null
-        var listener: LocationListener? = null
-        fun finish(l: Location?) {
+        val cancels = mutableListOf<CancellationSignal>()
+        val listeners = mutableListOf<LocationListener>()
+        var best: Location? = null
+        var pending = 0
+        fun finish() {
             if (!finished.compareAndSet(false, true)) return
-            cancel?.cancel()
-            listener?.let { manager.removeUpdates(it) }
-            val fresh = toPosition(l)
-            if (fresh != null) LiveState.location = l
+            cancels.forEach { it.cancel() }
+            listeners.forEach { manager.removeUpdates(it) }
+            val fresh = toPosition(best)
+            if (fresh != null) LiveState.location = best
             done(fresh ?: recent(manager))
         }
-        LiveState.main.postDelayed({ finish(null) }, timeoutMs)
+        // Sempre na thread principal: best e pending não precisam de trava.
+        fun arrived(l: Location?) {
+            if (finished.get()) return
+            pending--
+            if (toPosition(l) != null && (best == null || l!!.accuracy < best!!.accuracy)) best = l
+            if ((best?.accuracy ?: Float.MAX_VALUE) <= GOOD_M || pending <= 0) finish()
+        }
+        LiveState.main.postDelayed({ finish() }, timeoutMs)
         try {
-            val providers = manager.getProviders(true)
-            val provider =
-                when {
-                    LocationManager.GPS_PROVIDER in providers &&
-                        c.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
-                            PackageManager.PERMISSION_GRANTED -> LocationManager.GPS_PROVIDER
-                    LocationManager.NETWORK_PROVIDER in providers ->
-                        LocationManager.NETWORK_PROVIDER
-                    else -> providers.firstOrNull { it != LocationManager.PASSIVE_PROVIDER }
-                } ?: return finish(null)
-            if (Build.VERSION.SDK_INT >= 30) {
-                cancel = CancellationSignal()
-                manager.getCurrentLocation(provider, cancel, c.mainExecutor) {
-                    LiveState.main.post { finish(it) }
+            val fine =
+                c.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED
+            val enabled = manager.getProviders(true)
+            val providers =
+                listOfNotNull(
+                        if (Build.VERSION.SDK_INT >= 31) LocationManager.FUSED_PROVIDER else null,
+                        LocationManager.NETWORK_PROVIDER,
+                        if (fine) LocationManager.GPS_PROVIDER else null,
+                    )
+                    .filter { it in enabled }
+            if (providers.isEmpty()) {
+                LiveState.main.post { finish() }
+                return
+            }
+            pending = providers.size
+            for (provider in providers) {
+                if (Build.VERSION.SDK_INT >= 30) {
+                    val cancel = CancellationSignal()
+                    cancels += cancel
+                    manager.getCurrentLocation(provider, cancel, c.mainExecutor) {
+                        LiveState.main.post { arrived(it) }
+                    }
+                } else {
+                    val l = LocationListener { LiveState.main.post { arrived(it) } }
+                    listeners += l
+                    @Suppress("DEPRECATION")
+                    manager.requestSingleUpdate(provider, l, Looper.getMainLooper())
                 }
-            } else {
-                val l = LocationListener { LiveState.main.post { finish(it) } }
-                listener = l
-                @Suppress("DEPRECATION")
-                manager.requestSingleUpdate(provider, l, Looper.getMainLooper())
             }
         } catch (_: SecurityException) {
-            LiveState.main.post { finish(null) }
+            LiveState.main.post { finish() }
         } catch (_: IllegalArgumentException) {
-            LiveState.main.post { finish(null) }
+            LiveState.main.post { finish() }
         }
     }
 

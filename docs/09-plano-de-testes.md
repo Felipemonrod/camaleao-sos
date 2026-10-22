@@ -301,3 +301,30 @@ Nenhuma ligação real foi feita.
 - Discador real: Android de discagem no notebook, `DISCADOR=adb DISCADOR_SERIAL=<serial> npm start`, ligação atendida, não atendida e recusada; estado `1` (ACTIVE) só no atendimento.
 - Voz SAPI pt-BR no notebook audível pelo microfone do aparelho de discagem.
 - Xiaomi com `CALL_PHONE` e a permissão própria do MIUI/HyperOS.
+
+### Execução de 22/10/2026 — bateria completa no S25 após a 0.4.0
+
+Commit `10f1c6f` (correções da calibração da frase, da sessão armada e do SMS sem
+permissão, mais a função de ligação). `tools/validar.ps1 -Serial <S25>`, Painel local no PC
+via `adb reverse`. Ao fim, `pm clear` no app.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| CI do commit no GitHub (Android e Painel) | aprovado |
+| Compilação, Lint e testes unitários | aprovados; 16 testes unitários (15 anteriores + `onlyRecognizedReadingsCountAsPositive`) |
+| Testes do Painel (Node) | 21 aprovados |
+| Instrumentados no S25 (`CompleteFlowTest` + `GrammarProbeTest`) | `OK (15 tests)`: 13 aprovados e 2 ignorados por regra (alternar rede só no emulador; SMS sem número autorizado) |
+| `ScreenOffTest`, posição com tela apagada e Sentinela armada | **instável: 2 aprovações e 3 falhas em 5 execuções** (2 dentro da bateria, 3 isoladas, 1 falha isolada). A falha é `Sem posição com tela apagada e Sentinela armada` no limite de 15 s. Na execução anterior desta data, passou |
+| `ScreenOffTest`, execução longa | ignorado por regra (só roda quando pedido) |
+| `ScreenOffTest` depois da correção do `LocationProbe` | 5 aprovados em 5 |
+
+**Causa e correção da falha de posição:** com permissão fina, o `LocationProbe` pedia
+posição só ao GPS. Dentro de casa, com a tela apagada, o GPS não fixava em 15 s e o
+teste dependia de haver leitura de menos de 2 min por acaso. Na usuária, isso deixaria
+o alerta sem localização dentro de casa. Agora `fused` (API 31+), rede e GPS são
+pedidos juntos; a resposta com precisão de até 50 m encerra na hora, senão vale a melhor
+até o prazo. Depois da correção, no mesmo S25 e no mesmo cômodo: **5 aprovações em 5
+execuções** do `ScreenOffTest`, ~9 s cada. As correções da
+calibração e da sessão armada passaram só nos testes automáticos; o fluxo pela tela
+(salvar frase nova → 3 positivas → 1 negativa → calibrar → armar logo depois do teste)
+ainda não foi feito à mão.
