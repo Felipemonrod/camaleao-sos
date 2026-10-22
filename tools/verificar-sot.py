@@ -13,6 +13,7 @@ Checa o que e checavel automaticamente (invariante I6 de SISTEMA-SOT.md):
   V7  todo documento docs/NN-*.md aparece no indice do SOT.md
   V8  referencias/ nao contem marcadores de citacao nao resolvidos
   V9  nenhum ADR 'aceito' foi marcado tambem como substituido sem apontar numero
+  V10 todo dossie de pesquisa/ esta linkado de docs/11
 
 Uso:
     python tools/verificar-sot.py          # da raiz do repositorio
@@ -231,6 +232,27 @@ def v8_citacoes_resolvidas(res: Resultado) -> None:
     res.passou("V8 citacoes nas referencias")
 
 
+# ---------------------------------------------------------------- V10
+
+def v10_dossies_linkados(res: Resultado) -> None:
+    pasta = os.path.join(RAIZ, "pesquisa")
+    if not os.path.isdir(pasta):
+        return
+    doc11 = os.path.join(RAIZ, "docs", "11-trabalhos-relacionados.md")
+    if not os.path.exists(doc11):
+        res.falha("V10", "docs/11-trabalhos-relacionados.md nao existe")
+        return
+    texto = ler(doc11)
+    n = 0
+    for f in sorted(os.listdir(pasta)):
+        if not f.endswith(".md") or f == "README.md":
+            continue
+        n += 1
+        if f not in texto:
+            res.falha("V10", f"pesquisa/{f} nao esta linkado de docs/11")
+    res.passou(f"V10 dossies linkados ({n} dossie(s))")
+
+
 # ---------------------------------------------------------------- main
 
 def main() -> int:
@@ -246,6 +268,7 @@ def main() -> int:
     v5_v6_questoes_e_riscos(res)
     v7_docs_no_indice(res)
     v8_citacoes_resolvidas(res)
+    v10_dossies_linkados(res)
 
     if not args.quiet:
         for check in res.ok:

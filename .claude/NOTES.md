@@ -123,3 +123,41 @@ A regra da seção: cortar é obrigatório, mentir sobre o corte não é.
    README.
 3. Conseguir o documento do hackathon.
 4. Decidir Q1 (texto da notificação do FGS) — bloqueia D5.
+
+---
+
+## 2026-10-21 (3) — Dossiês de pesquisa e pasta `pesquisa/`
+
+Criada a pasta `pesquisa/` com dossiês dos dois sistemas mais próximos do Camaleão.
+A divisão: `docs/11` é dono das **conclusões**, o dossiê é dono da **investigação**.
+Numeração `Q-XXX-n` para não colidir com as `Qn` de `docs/10` — a diferença é que `Qn`
+bloqueia o projeto e `Q-XXX-n` só o melhora. Registrado em `SISTEMA-SOT.md` §3 e
+checado pela nova verificação V10 (dossiê órfão falha o CI).
+
+### O achado que importa
+
+A SESP-PR alega que o Botão do Pânico Virtual funciona **sem internet nem crédito no
+celular**. O nosso ADR 0006 afirma o contrário para a entrega do alerta. Uma das duas
+afirmações está incompleta.
+
+Quatro hipóteses no dossiê, e duas delas mudariam o projeto: se for SMS como fallback,
+entra na arquitetura; se for zero-rating por acordo com o Estado, é um bom argumento
+para explicar à banca por que o Camaleão **não** pode prometer o mesmo.
+
+É a pergunta mais valiosa da pesquisa agora — `Q-BPV-1`.
+
+### Outras duas coisas que já dá para aproveitar
+
+- **Desacoplamento alerta ↔ gravação.** No serviço do PR, fechar o app durante a
+  gravação não interfere no atendimento. É o princípio do ADR 0006, validado por um
+  sistema em produção. ⚠️ Não está explícito nos nossos requisitos — candidato a
+  requisito novo em `docs/03`.
+- **Fachada funcional > fachada passiva.** O Clique 180 usa uma frase motivacional; a
+  nossa calculadora calcula. Isso transforma o RF-01 em requisito de **segurança**, não
+  de polimento.
+
+### Pendência mais barata do projeto
+
+Buscar "Clique 180" nas duas lojas. Cinco minutos, e decide se podemos citá-lo na
+apresentação — além de gerar evidência sobre a camuflagem passar ou não pela revisão da
+Apple (regra 2.5.14, nosso R4).

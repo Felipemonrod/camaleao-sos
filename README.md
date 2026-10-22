@@ -24,6 +24,7 @@ segurança** sem enviar áudio para a nuvem.
 | Contribuir, sendo um agente de IA | [**AGENTS.md**](AGENTS.md) — leia inteiro antes de escrever |
 | Começar a codar agora | [Corte de 24 horas](docs/08-plano-prototipo.md#-corte-de-24-horas) |
 | Saber o que já existe lá fora | [docs/11](docs/11-trabalhos-relacionados.md) |
+| Investigar um sistema parecido | [pesquisa/](pesquisa/README.md) — dossiês com roteiro |
 
 ## O que podemos e não podemos afirmar
 
@@ -123,6 +124,7 @@ CONTRIBUTING.md         fluxo para pessoas
 RELATORIO-IA.md         registro do uso de IA
 docs/00..11             documentação, um dono por assunto
 docs/_templates/        modelos de ADR e de documento
+pesquisa/               dossiês de investigação, um por sistema estudado
 .claude/decisions/      ADRs
 .claude/NOTES.md        cronológico
 tools/verificar-sot.py  verificador das invariantes

@@ -63,6 +63,10 @@ Atravessam todo o SOT e valem mais que qualquer recurso:
 | 10 | [Riscos e questões abertas](docs/10-riscos-e-questoes-abertas.md) | o que ainda não está decidido |
 | 11 | [Trabalhos relacionados](docs/11-trabalhos-relacionados.md) | prior art, e o que nos diferencia |
 
+Dossiês de investigação, com perguntas abertas e roteiro, em
+[`pesquisa/`](pesquisa/README.md): [Clique 180](pesquisa/clique-180.md) e
+[Botão do Pânico — PR](pesquisa/botao-do-panico-pr.md).
+
 ## Decisões
 
 Uma por arquivo, formato Contexto / Decisão / Consequências. **Não discuta decisão

@@ -121,9 +121,28 @@ docs/
   decisions/NNNN-*.md     ← ADRs
   commands/               ← rituais de sessão
 
+pesquisa/                 ← dossiês de investigação, um por sistema estudado
+  README.md               ← como a pasta funciona e como escrever um dossiê
+  <sistema>.md            ← fatos, perguntas Q-XXX-n, roteiro
+
 tools/verificar-sot.py    ← o verificador das invariantes
 referencias/              ← material de origem, íntegro, nunca editado
 ```
+
+### A pasta `pesquisa/`
+
+| | Dona de | Numeração |
+|---|---|---|
+| `docs/11` | as **conclusões** de prior art | — |
+| `pesquisa/*.md` | a **investigação**: fatos por sistema, perguntas, roteiro | `Q-XXX-n` |
+
+Um dossiê é material de trabalho: muda enquanto se investiga, e quando uma conclusão
+amadurece ela sobe para `docs/11`. A numeração com prefixo evita colisão com as
+questões abertas `Qn` de `docs/10`, e a distinção é real: `Qn` **bloqueia** o projeto;
+`Q-XXX-n` apenas o melhora. Promova uma em outra quando virar bloqueio.
+
+Todo dossiê precisa estar linkado de `docs/11` — o verificador checa (V10), para que
+pesquisa não vire pasta órfã.
 
 ### A pergunta que resolve 90% dos casos
 

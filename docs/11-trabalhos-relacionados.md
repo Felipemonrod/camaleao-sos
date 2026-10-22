@@ -29,44 +29,53 @@ reimplementação de algo que existe — o que é legítimo num trabalho acadêm
 
 ## Brasil
 
-### Clique 180 — o mais próximo da Fachada
+Os dois sistemas mais relevantes têm **dossiê de investigação próprio** em
+[`pesquisa/`](../pesquisa/README.md), com os fatos detalhados, as perguntas abertas e o
+roteiro para respondê-las. Aqui ficam só as conclusões.
 
-App do antigo Ministério/Secretaria de Políticas para Mulheres, em parceria com ONU
-Mulheres e Embaixada Britânica. **Tem tela de disfarce** — uma frase motivacional
-serve para despistar o agressor — e ativação por agitar o celular ou tocar a tela
-quatro vezes com dois dedos. Reportado como Android apenas
-([tutorial de 2018](https://olhardigital.com.br/2018/03/05/noticias/como-usar-aplicativo-que-combate-violencia-contra-mulher/)).
+### Clique 180 — prior art da Fachada
 
-**Implicação direta para o Camaleão:** a camuflagem **não é o diferencial**. Já foi
-feita, por política pública federal, há anos. O diferencial tem de ser o gatilho por
-voz, ou nada.
+→ Dossiê completo: [`pesquisa/clique-180.md`](../pesquisa/clique-180.md)
 
-⚠️ A informação é de 2018. Confirmar se o app ainda está nas lojas antes de citar.
+App da ONU Mulheres com a Secretaria de Políticas para as Mulheres. **Tem tela de
+disfarce** e ativação por gesto, desde 2018 no mínimo.
 
-### Botão do Pânico Virtual (Paraná) — o mais próximo do Protocolo SOS
+**Conclusão para o Camaleão:** a camuflagem **não é o nosso diferencial**. Já foi feita
+por política pública federal. O diferencial tem de ser o gatilho por voz, ou nada.
 
-Lançado em 2021, integrado ao App 190. Liberado **apenas para mulheres com medidas
-protetivas de urgência**. Ao ser acionado, aciona a Polícia Militar, que recebe a
-geolocalização, e **grava o som ambiente por 60 segundos** como apoio à equipe
-([Governo do Paraná](https://www.parana.pr.gov.br/Noticia/Entenda-como-funciona-o-Botao-do-Panico-Virtual-ferramenta-para-vitimas-de-violencia)).
+Duas conclusões secundárias, detalhadas no dossiê: a Fachada dele é **passiva** (uma
+frase), enquanto a nossa calcula de verdade — camuflagem mais forte; e os gatilhos dele
+exigem o aparelho destravado e na mão, que é a lacuna que o
+[ADR 0005](../.claude/decisions/0005-gatilhos-multiplos.md) ataca.
 
-Em Campo Largo (PR), 62 mulheres com medidas ativas usavam a ferramenta; o cadastro
-exige levar o despacho judicial à Guarda Municipal, e há o app `153 Cidadão` como via
-alternativa
-([reportagem](https://www.bemparana.com.br/noticias/regiao-metropolitana/campo-largo-registra-mais-de-550-atendimentos-a-mulheres-vitimas-de-violencia-em-um-ano/)).
+⚠️ **Não cite na apresentação antes de confirmar se o app ainda está nas lojas.**
+É `Q-C180-1` no dossiê, e são cinco minutos.
 
-**Implicações, e são três:**
+### Botão do Pânico Virtual (Paraná) — prior art do Protocolo SOS
 
-1. **Gravação de áudio como evidência já é prática oficial no Brasil.** Isso ajuda
-   muito o Camaleão em [J1](07-privacidade-lgpd.md): não estamos propondo algo
-   inédito nem juridicamente temerário.
-2. **O alerta vai direto para a PM, não para uma rede de apoio informal.** Isso
-   resolve o [R17](10-riscos-e-questoes-abertas.md) — "o alerta chega e nada
-   acontece" — de um jeito que o Camaleão **não** resolve, porque exige convênio
-   institucional, que está fora de escopo.
-3. **É restrito a quem tem medida protetiva.** O Camaleão atende a pessoa **antes**
-   disso, que é a maioria e a mais desassistida. Esse é um diferencial de público
-   real, e vale dizer.
+→ Dossiê completo: [`pesquisa/botao-do-panico-pr.md`](../pesquisa/botao-do-panico-pr.md)
+
+Integrado ao App 190 da PMPR desde 2021, em todo o estado. Liberado **só por decisão
+judicial**. Aciona a Polícia Militar com geolocalização e **grava 60 segundos de som
+ambiente**. Central de monitoramento 24/7.
+
+**Três conclusões:**
+
+1. **Gravação de áudio como evidência já é prática oficial no Brasil.** Ajuda muito em
+   [J1](07-privacidade-lgpd.md): não estamos propondo nada inédito nem juridicamente
+   temerário.
+2. **O alerta vai para a PM, não para uma rede informal.** Isso resolve o
+   [R17](10-riscos-e-questoes-abertas.md) de um jeito que o Camaleão **não** resolve,
+   porque exige convênio institucional. Diga isso antes de ser perguntado.
+3. **É restrito a quem tem medida protetiva.** O Camaleão atende quem está **antes**
+   disso — a maioria, e a mais desassistida. **Este é o nosso diferencial de público, e
+   é real.**
+
+⚠️ **Um achado que pode mudar o ADR 0006:** a SESP-PR alega que o serviço funciona
+**sem internet nem crédito no celular**. Nosso
+[ADR 0006](../.claude/decisions/0006-maquina-de-estados-do-alerta.md) afirma o
+contrário para a entrega. Uma das duas afirmações está incompleta, e descobrir qual é a
+pergunta mais valiosa da pesquisa agora — `Q-BPV-1` no dossiê.
 
 ### Base legal estadual
 
