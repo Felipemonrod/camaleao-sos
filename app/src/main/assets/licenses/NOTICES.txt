@@ -1,0 +1,8 @@
+Camaleão SOS — protótipo Android, sem integração com centrais públicas.
+
+Vosk Android 0.3.75 — Alpha Cephei — Apache-2.0.
+Modelo vosk-model-small-pt-0.3 — Apache-2.0 conforme catálogo oficial https://alphacephei.com/vosk/models. Modelo embarcado; não depende de rede durante reconhecimento. README original preservado junto ao modelo.
+
+JNA 5.18.1 — JNA contributors — uso sob Apache-2.0, alternativa da licença dupla LGPL-2.1-or-later / Apache-2.0. Kotlin 2.2.20 — JetBrains — Apache-2.0. AndroidX WorkManager 2.10.1 e componentes AndroidX transitivos — Android Open Source Project — Apache-2.0. Cópias e avisos dos artefatos permanecem no projeto e no empacotamento.
+
+O sherpa-onnx é a arquitetura alvo para KWS português; não há um modelo KWS PT validado distribuído nesta versão. O protótipo segue o ADR 0002 usando Vosk em dois estágios. A licença institucional do código do projeto ainda depende da instituição; esta lista não altera a licença das dependências.

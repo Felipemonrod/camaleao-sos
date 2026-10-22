@@ -213,3 +213,23 @@ ASR **desde o protótipo**, mesmo com os dois rodando em Vosk. É o que permite 
 só o primeiro estágio quando o modelo pt-BR existir — sem reescrever o resto.
 
 Essa fronteira é a razão de ser do ADR 0001.
+
+## Experimento Android da tarefa 1.1
+
+`GrammarProbeTest` carregou o modelo distribuído, criou o recognizer com lista JSON,
+processou uma amostra sintética pt-BR e trocou para a gramática de comandos com
+`reset`/`setGrammar`. Resultado real e cobertura em [docs/09](09-plano-de-testes.md#registro-de-execução).
+A observação apoia a condição do ADR 0002 no artefato testado. Q4 permanece aberta
+para a revisão formal do time; nenhum ADR aceito foi reescrito.
+
+A versão entregue usa Vosk Android `0.3.75`, JNA `5.18.1` e o pacote oficial
+`vosk-model-small-pt-0.3.zip`, cuja licença consta como Apache-2.0 no
+[catálogo oficial](https://alphacephei.com/vosk/models). O download é verificado por
+SHA-256 em `tools/preparar-modelos.py`; o README original é preservado em assets.
+Não é incluído modelo sherpa-onnx em inglês apresentado como português.
+
+`VoskPipeline` mantém um modelo e um recognizer, alterando a gramática entre os dois
+estágios. O ajuste local requer três leituras positivas e pelo menos uma negativa;
+calcula a separação textual e recusa salvar sem separação. Isto não substitui o
+protocolo de FAR/FRR de [docs/09](09-plano-de-testes.md). Frase parecida do roteiro foi
+usada como negativo sintético; não foi realizado corpus de centenas de horas.

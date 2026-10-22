@@ -114,7 +114,7 @@ Coisas que o sistema **deve deixar de fazer**, registradas para não voltarem co
 | CR-03 | Não prometer operação com o aplicativo encerrado ou após reinício. | [04-restricoes](04-restricoes-plataforma.md) |
 | CR-04 | Não usar `SpeechRecognizer` do Android como detector contínuo. | ADR 0002 |
 | CR-05 | Não depender de motor com licença de avaliação comercial. | RNF-01, ADR 0002 |
-| CR-06 | Não exibir contagem regressiva de cancelamento antes de decidir [Q2](10-riscos-e-questoes-abertas.md). | [C3](02-modelo-de-ameaca.md) |
+| CR-06 | Não exibir contagem regressiva de cancelamento antes da decisão de fluxo em [ADR 0009](../.claude/decisions/0009-notificacao-e-cancelamento-protegido.md). | [C3](02-modelo-de-ameaca.md) |
 | CR-07 | Não implementar `VoiceInteractionService` para burlar restrições de background. | Transforma o produto em assistente de sistema. |
 | CR-08 | Não religar o microfone a partir de `BOOT_COMPLETED`. | Proibido em Android 14+; RF-28 |
 | CR-09 | Não usar verificação de locutor como condição para disparar. | ADR 0007 — falha quando a voz está alterada |

@@ -58,7 +58,7 @@ verificar com a mesma disciplina de
 
 ### Corolário: o comando de cancelamento não usa a frase de ativação
 
-Se o cancelamento existir (ver [Q2](../../docs/10-riscos-e-questoes-abertas.md)), ele
+Se o cancelamento existir (ver [ADR 0009](0009-notificacao-e-cancelamento-protegido.md)), ele
 tem comando próprio. Reutilizar a Frase de Segurança para cancelar cria uma
 ambiguidade perigosa justamente no pior momento.
 
@@ -70,7 +70,7 @@ ambiguidade perigosa justamente no pior momento.
 microfone e mostrar que o sistema degrada em vez de morrer. É o momento mais forte da
 apresentação, porque responde à pergunta que a banca ia fazer.
 
-**Resolve, parcialmente, Q2.** Com um gatilho confiável disponível, a Sentinela pode
+**Reduz a dependência do cancelamento.** Com um gatilho confiável disponível, a Sentinela pode
 ser calibrada conservadora — preferindo não disparar — sem deixar a usuária sem
 recurso. Isso é o que torna a meta de FAR baixíssimo aceitável.
 

@@ -2,7 +2,7 @@
 projeto: Camaleão SOS
 documento: Source of Truth (SOT)
 versao: 0.3
-status: rascunho — pré-implementação
+status: protótipo — implementação em validação
 atualizado: 2026-10-21
 ---
 
@@ -82,6 +82,7 @@ fechada nos documentos acima** — aponte para o ADR.
 | [0006](.claude/decisions/0006-maquina-de-estados-do-alerta.md) | Quatro estados do alerta; a interface não mente | aceito |
 | [0007](.claude/decisions/0007-frase-nao-e-autenticacao.md) | A frase não é credencial; sem verificação de locutor no MVP | aceito |
 | [0008](.claude/decisions/0008-kotlin-nativo-sem-flutter.md) | Protótipo 100 % Kotlin nativo, sem Flutter | aceito |
+| [0009](.claude/decisions/0009-notificacao-e-cancelamento-protegido.md) | Notificação clara e cancelamento dentro da Área protegida | aceito |
 
 **Anotações cronológicas** do dia a dia vão em [`.claude/NOTES.md`](.claude/NOTES.md).
 
@@ -123,16 +124,6 @@ python tools/verificar-sot.py
 
 ## Estado atual
 
-**Nada implementado.** Documentação em 0.3, oito ADRs, zero linhas de Kotlin.
-
-O protótipo tem prazo de **um dia**, e o plano completo de `docs/08` não cabe nisso.
-O recorte do que cabe está em
-[**⏱ Corte de 24 horas**](docs/08-plano-prototipo.md#-corte-de-24-horas) — leia essa
-seção antes de começar a codar.
-
-Primeiro passo, e é uma pergunta, não uma tela:
-
-> **D1 / tarefa 1.1 — `vosk-model-small-pt-0.3` aceita reconfiguração de gramática?**
-> Responde [Q4](docs/10-riscos-e-questoes-abertas.md) e valida o
-> [ADR 0002](.claude/decisions/0002-motor-de-reconhecimento.md). Se falhar, o dia
-> inteiro muda de forma.
+A implementação e as evidências verificadas estão no [estado de execução do protótipo](docs/08-plano-prototipo.md#estado-da-implementação).
+Métricas e testes mantêm seu documento dono em [docs/09](docs/09-plano-de-testes.md#registro-de-execução).
+O objetivo institucional de produto completo não foi convertido em afirmação de confiabilidade sem medição.

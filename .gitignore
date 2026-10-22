@@ -39,3 +39,9 @@ desktop.ini
 *.jks
 keystore.properties
 .env
+.tools/
+.kotlin/
+artifacts/
+app/src/main/assets/models/
+server/data/
+server/certs/
