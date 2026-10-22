@@ -18,7 +18,14 @@ import br.com.camaleao.sos.sos.Store
 import java.util.concurrent.atomic.AtomicBoolean
 
 class SentinelaService : Service() {
+    companion object {
+        // Sessão dona do LiveState. A thread de uma sessão encerrada termina depois do
+        // onDestroy e não pode desarmar a sessão que já começou (teste → armar).
+        @Volatile private var current: Any? = null
+    }
+
     private val running = AtomicBoolean(false)
+    private val session = Any()
     private var recorder: AudioRecord? = null
     private lateinit var store: Store
     private var recordingCallback: AudioManager.AudioRecordingCallback? = null
@@ -62,6 +69,7 @@ class SentinelaService : Service() {
             return START_NOT_STICKY
         }
         running.set(true)
+        current = session
         LiveState.preparing = true
         LiveState.lastHeard = ""
         LiveState.testMatches = 0
@@ -98,6 +106,7 @@ class SentinelaService : Service() {
                         when (action) {
                             VoiceAction.ALERT -> LiveState.main.post { Actions.alert(this, "voice") }
                             VoiceAction.LOCATION -> LiveState.main.post { Actions.shareLocation(this) }
+                            VoiceAction.CALL -> LiveState.main.post { Actions.call(this) }
                             VoiceAction.RECORD ->
                                 evidence.start(
                                     "voice",
@@ -223,11 +232,14 @@ class SentinelaService : Service() {
             recorder = null
             runCatching { engine?.close() }
             if (wake.isHeld) wake.release()
-            LiveState.active = false
-            LiveState.preparing = false
-            store.flag("was_armed", false)
-            LiveState.changed()
-            LiveState.main.post { stopSelf() }
+            if (current === session) {
+                current = null
+                LiveState.active = false
+                LiveState.preparing = false
+                store.flag("was_armed", false)
+                LiveState.changed()
+                LiveState.main.post { if (current == null) stopSelf() }
+            }
         }
     }
 

@@ -53,6 +53,10 @@ object PhraseMatcher {
         }
     }
 
+    /** O texto é a frase inteira, sem nada a mais: a forma que o teste devolve no acerto. */
+    fun recognized(expected: String, heard: String) =
+        words(expected).let { it.size >= 3 && it == words(heard) }
+
     fun accepts(expected: String, actual: String, threshold: Double): Boolean {
         val wanted = words(expected)
         val heard = words(actual)

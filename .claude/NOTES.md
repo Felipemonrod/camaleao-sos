@@ -244,3 +244,42 @@ site; não publica `docs/`). APK de release 0.3.0 na pré-release `v0.3.0-demo`,
 essa chave, uma nova versão exige desinstalar a anterior). O build release não é
 depurável: modo apresentação e log de diagnóstico ficam desligados. Instalação num
 celular sem modo desenvolvedor ainda não testada (risco de Play Protect).
+
+## 2026-10-22 — SMS no Xiaomi e função de ligação (ADR 0012)
+
+Colega instalou o APK 0.3.0 da página num Xiaomi e o SMS não saiu, mesmo liberando
+"aplicativos externos" nas configurações. Causa provável: no Android 15+ a permissão de
+SMS é configuração restrita para app instalado fora da loja (App info → ⋮ → Permitir
+configurações restritas, opção que só aparece depois de uma negação e às vezes some em
+Redmi), mais a camada própria de permissões do MIUI/HyperOS ("Outras permissões").
+Não confirmado no aparelho: falta o registro da tela de Ocorrências e a versão do sistema.
+Defeito nosso, ainda aberto: `EmergencySms.send` sem permissão devolve 0 sem registrar nada.
+
+Localização por SMS já existia (link do mapa e precisão). Ligação: o responsável queria
+voz robotizada para quem atende, celular mudo e insistir até atender. Limites
+explicados (sem injeção de áudio na chamada nem estado "atendida" para app comum; tela
+de chamada quebra o RF-47). Decisões do responsável: função própria `ligar`, desligada
+por padrão; telefones vão no pedido ao Painel; sem Twilio (prazo de horas), com
+discador próprio. Resultado no ADR 0012 e em docs/09.
+
+Para rodar o caminho B: segundo Android com chip e créditos ligado por USB ao notebook,
+`DISCADOR=adb DISCADOR_SERIAL=<serial> npm start` em `server/` (ou `DISCADOR=simulado`
+para ensaiar). O notebook fala pelos alto-falantes, então o aparelho de discagem fica
+ao lado dele com o som ligado. Caixa postal conta como atendida.
+
+Pendente: testes em aparelho listados em docs/09; aviso visível de "SMS sem permissão"
+e plano B pelo app de mensagens (`ACTION_SENDTO`) não foram feitos; nova release só
+depois do teste. Nada commitado nesta etapa.
+
+## 2026-10-22 — frase nova que não armava e release 0.4.0
+
+Usuário com três positivas guardadas não conseguia calibrar a frase nova. Causas
+corrigidas: (1) a tela guardava como positiva uma leitura que a Sentinela não
+reconheceu, e com o limite de 3 sem como apagar a calibração travava; agora só leitura
+reconhecida conta, negativa que dispara é avisada e há "Recomeçar amostras"; (2) o teste
+de frase não juntava a frase cortada por micro-pausa, como o modo armado já fazia; (3) a
+thread da sessão de teste, ao terminar depois do `onDestroy`, marcava desarmado e podia
+parar a sessão armada logo em seguida. Também: SMS sem permissão ou sem consentimento
+agora fica registrado como `FALHOU` em vez de sumir. Testes unitários passam; nada
+disso foi testado no S25 ainda. APK 0.4.0 publicado na pré-release `v0.4.0-demo` para um
+amigo testar pela página.

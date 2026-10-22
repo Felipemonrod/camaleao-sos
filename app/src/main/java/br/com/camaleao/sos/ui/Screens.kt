@@ -191,10 +191,19 @@ internal fun MainActivity.calibration() {
     )
     button("Guardar leitura como positiva", secondary = true) { captureSample(true) }
     button("Guardar leitura como negativa", secondary = true) { captureSample(false) }
+    button("Recomeçar amostras", secondary = true) {
+        positives.clear()
+        negatives.clear()
+        render()
+    }
     button("Calcular ajuste e salvar") {
         val threshold = PhraseMatcher.calibratedThreshold(positives, negatives, store.phrase())
         if (threshold == null) {
-            toast("Ainda não há separação segura. Repita três positivas e uma negativa distintas.")
+            toast(
+                if (positives.size < 3 || negatives.isEmpty())
+                    "Faltam amostras: três positivas reconhecidas e uma negativa."
+                else "Uma negativa disparou como a frase. Recomece as amostras ou troque a frase."
+            )
             return@button
         }
         store.put("threshold", threshold.toString())
@@ -221,10 +230,20 @@ private fun MainActivity.captureSample(positive: Boolean) {
         toast("Fale novamente e aguarde o resultado antes de guardar.")
         return
     }
+    // No teste, a Sentinela devolve a própria frase só quando a reconheceu (VoskPipeline).
+    val recognized = PhraseMatcher.recognized(store.phrase(), LiveState.lastHeard)
+    if (positive && !recognized) {
+        toast("A Sentinela não reconheceu esta leitura. Fale a frase de novo; nada foi guardado.")
+        return
+    }
     capturedSerial = LiveState.sampleSerial
     if (positive) {
         if (positives.size < 3) positives += LiveState.lastHeard
-    } else negatives += LiveState.lastHeard
+    } else {
+        negatives += LiveState.lastHeard
+        if (recognized)
+            toast("Esta frase parecida disparou: seria um falso alerta. Recomece as amostras ou troque a Frase de Segurança.")
+    }
     render()
 }
 

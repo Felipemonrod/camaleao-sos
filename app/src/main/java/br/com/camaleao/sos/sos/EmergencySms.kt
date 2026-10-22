@@ -33,7 +33,18 @@ object EmergencySms {
 
     /** Envia [text] a todos os participantes. Devolve quantos envios foram entregues ao Android. */
     fun send(context: Context, store: Store, reason: String, text: String): Int {
-        if (!allowed(context, store)) return 0
+        if (!allowed(context, store)) {
+            // Sem isso o alerta some sem rastro: no Xiaomi a permissão costuma estar restrita.
+            if (contacts(store).isNotEmpty())
+                note(
+                    store,
+                    reason,
+                    "Rede de Apoio",
+                    if (!store.flag("share_consent")) "FALHOU: comunicação não autorizada"
+                    else "FALHOU: sem permissão de SMS (veja Configurações do app)",
+                )
+            return 0
+        }
         val sms =
             if (Build.VERSION.SDK_INT >= 31) context.getSystemService(SmsManager::class.java)
             else @Suppress("DEPRECATION") SmsManager.getDefault()
@@ -62,6 +73,12 @@ object EmergencySms {
         }
         LiveState.changed()
         return started
+    }
+
+    /** Registro avulso, para ligações e falhas que não chegam a virar SMS. */
+    fun note(store: Store, reason: String, to: String, status: String) {
+        log(store, UUID.randomUUID().toString(), reason, to, status)
+        LiveState.changed()
     }
 
     fun log(store: Store): List<JSONObject> =

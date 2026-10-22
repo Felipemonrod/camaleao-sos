@@ -67,23 +67,20 @@ class VoskPipeline(
         val result = JSONObject(recognizer.result)
         val text = result.optString("text")
         if (flow.phase == VoicePhase.WAITING_KEYWORD) {
-            if (test) {
-                if (text.isNotBlank())
-                    onPhrase(
-                        if (Stage1.found(Stage1.words(result), target) && verified())
-                            target.joinToString(" ")
-                        else text
-                    )
-                return
-            }
             // O endpoint pode cortar a frase numa micro-pausa: junta com o resultado
-            // anterior se ele acabou há pouco.
+            // anterior se ele acabou há pouco. O teste usa a mesma regra do modo armado,
+            // senão a calibração recusa o que a Sentinela aceitaria.
             val current = Stage1.words(result)
             val joined = if (now - carryAt <= CARRY_MS) carry + current else current
             carry = current
             carryAt = now
             val hit = Stage1.found(joined, target)
             val ok = hit && verified()
+            if (test) {
+                if (ok) carry = emptyList()
+                if (text.isNotBlank()) onPhrase(if (ok) target.joinToString(" ") else text)
+                return
+            }
             if (current.isNotEmpty() || hit)
                 log(
                     if (!hit) "fala sem a frase (${current.size} palavras)"
