@@ -14,6 +14,12 @@ object LiveState {
     @Volatile var testMatches = 0
     @Volatile var sampleSerial = 0
     @Volatile var cancelCommand = false
+    @Volatile var recording = false
+    @Volatile var recordRequest = false
+    @Volatile var stopRecording = false
+    @Volatile var lastCommand = ""
+    /** Tipos com que o Foreground Service subiu (ServiceInfo.FOREGROUND_SERVICE_TYPE_*). */
+    @Volatile var foregroundTypes = 0
     @Volatile var location: Location? = null
     val main = Handler(Looper.getMainLooper())
     val listeners = linkedSetOf<() -> Unit>()

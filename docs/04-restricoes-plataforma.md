@@ -70,6 +70,28 @@ daí o requisito RF-20 de armar com o app em primeiro plano.
 em que o serviço de microfone é criado. Iniciar um FGS de microfone a partir de
 background, em situação não isenta, gera `SecurityException`.
 
+### Localização no mesmo serviço
+
+Para as funções de [ADR 0010](../.claude/decisions/0010-palavra-por-funcao-e-sms-automatico.md),
+a Sentinela declara `microphone|location`. Os tipos combinam-se com `|`
+([declarar FGS](https://developer.android.com/develop/background-work/services/fgs/declare)).
+O tipo `location` exige `FOREGROUND_SERVICE_LOCATION`, localização ligada e
+`ACCESS_COARSE_LOCATION` ou `ACCESS_FINE_LOCATION`; essas permissões também são
+"while-in-use" e o serviço não pode ser **criado** com o app em background sem
+`ACCESS_BACKGROUND_LOCATION`
+([tipos de FGS](https://developer.android.com/develop/background-work/services/fgs/service-types)).
+Por isso o tipo `location` só entra quando a usuária autorizou localização, e o
+serviço é criado ao armar, com a Área protegida visível.
+
+⚠️ **Não verificado:** que o serviço criado assim continua obtendo posição depois que a
+tela bloqueia. As páginas acima tratam da criação, não da duração do acesso. Verificar
+no aparelho real com a tela bloqueada; o resultado entra em
+[docs/09](09-plano-de-testes.md#registro-de-execução).
+
+⚠️ **Não verificado em fonte primária:** o SMS enviado por `SmsManager` fica na caixa de
+enviados do aparelho. Observado em teste ([docs/09](09-plano-de-testes.md#registro-de-execução));
+consequência de privacidade em [docs/07](07-privacidade-lgpd.md#controles-entregues-e-limites-pendentes).
+
 ### A notificação é obrigatória
 
 `startForeground()` recebe a notificação que fica exibida enquanto o serviço roda

@@ -190,7 +190,26 @@ A revogação do consentimento de comunicação pausa a fila real nas próximas
 transmissões. Não desfaz transmissões já realizadas. Revogar localização impede
 incluí-la em novas Ocorrências; registros já assinados preservam seu conteúdo.
 Para suspender a transmissão de registros pendentes, revogue a comunicação.
-As pendências J1 a J5 continuam abertas. A evidência de áudio permanece desabilitada.
+As pendências J1 a J5 continuam abertas.
+
+Com [ADR 0010](../.claude/decisions/0010-palavra-por-funcao-e-sms-automatico.md):
+
+- **Gravação:** existe como função desligada por padrão (RF-46). Grava o PCM da
+  captura única em blocos AES-GCM de ~1 s, com chave aleatória por gravação
+  envelopada pelo Keystore e índice do bloco como dado autenticado; fica em arquivo
+  privado, nunca em galeria nem rede (RF-51). A exportação decifra para WAV só por
+  ação explícita, confere tags, ordem e SHA-256 do áudio original, e o arquivo
+  exportado sai **sem** cifragem. O responsável adiou J1 para o protótipo; a interface
+  não afirma validade de prova (RF-53).
+- **SMS:** o texto e o link de posição vão em claro pela rede da operadora, e a
+  mensagem fica na caixa de **enviados** do aparelho (observado). Quem pegar o
+  celular pode ver que houve alerta: limite direto de [C4](02-modelo-de-ameaca.md),
+  informado no consentimento de comunicação.
+- **Localização:** pontual, obtida ao disparar alerta ou compartilhar posição e só com
+  consentimento; no compartilhamento, repetida a cada 5 minutos enquanto armada.
+  Não há rastreamento em background fora disso.
+- **Diagnóstico de voz:** somente em build debug, o log registra eventos e notas de
+  similaridade, nunca o texto falado (RF-52).
 
 Ao atualizar o primeiro protótipo, `LegacyMigration` preserva suas preferências em
 um arquivo cifrado no Store e verifica a leitura antes de limpar as preferências

@@ -6,6 +6,8 @@ import android.graphics.Color
 import android.net.Uri
 import br.com.camaleao.sos.LiveState
 import br.com.camaleao.sos.domain.PhraseMatcher
+import br.com.camaleao.sos.domain.VoiceCommands
+import br.com.camaleao.sos.sos.Actions
 import br.com.camaleao.sos.sos.*
 import java.text.DateFormat
 import java.util.Date
@@ -84,15 +86,21 @@ internal fun MainActivity.home() {
                 )
             )
         }
+    if (LiveState.recording)
+        card(Color.rgb(255, 236, 214)) {
+            addView(text("Gravação cifrada em andamento", 17, ink, true))
+            button("Parar gravação", this, true) { LiveState.stopRecording = true }
+        }
     button("Testar minha frase", secondary = true) { navigate("calibration") }
     button("Frase de Segurança", secondary = true) { navigate("phrase") }
+    button("Palavras e funções", secondary = true) { navigate("functions") }
     button("Rede de Apoio e consentimentos", secondary = true) { navigate("contacts") }
     button("Criar Ocorrência manual", secondary = true) {
         confirm(
             "Preparar Protocolo SOS?",
             "A Ocorrência será encaminhada ao Painel pareado após a preparação. É possível cancelar a preparação dentro desta área.",
         ) {
-            if (Protocol.create(this, "manual", false) == null)
+            if (Actions.alert(this, "manual") == null)
                 toast("Autorize a comunicação na Rede de Apoio.")
             else navigate("events")
         }
@@ -127,7 +135,9 @@ internal fun MainActivity.phrase() {
         gap(this, 8)
         addView(
             text(
-                "Após a frase, diga “enviar alerta” em até 6 segundos. Timeout ou outra fala volta à espera sem enviar. O sherpa-onnx é a arquitetura alvo; não há modelo KWS PT validado incluído.",
+                "Após a frase, diga a palavra de uma função ligada em até $VOICE_WINDOW_S segundos: " +
+                    Actions.commands(store).filter { it.enabled }.joinToString { "“${it.words}”" } +
+                    ". Timeout ou outra fala volta à espera sem agir. O sherpa-onnx é a arquitetura alvo; não há modelo KWS PT validado incluído.",
                 14,
                 muted,
             )
@@ -143,12 +153,18 @@ internal fun MainActivity.phrase() {
             toast("Use de 3 a 10 palavras, até 100 caracteres.")
             return@button
         }
-        store.put("phrase", p)
-        store.flag("calibrated", false)
-        store.put("threshold", "1.0")
-        positives.clear()
-        negatives.clear()
-        navigate("calibration")
+        VoiceCommands.problem(p, Actions.commands(store))?.let {
+            toast("Conflito com as palavras das funções. $it")
+            return@button
+        }
+        withVocabulary(listOf(p)) {
+            store.put("phrase", p)
+            store.flag("calibrated", false)
+            store.put("threshold", "1.0")
+            positives.clear()
+            negatives.clear()
+            navigate("calibration")
+        }
     }
 }
 
@@ -312,14 +328,14 @@ internal fun MainActivity.contacts() {
         }
     }
     check(
-        "Autorizo transmitir Ocorrências ao Painel pareado e preparar mensagens para participantes que concordaram.",
+        "Autorizo transmitir Ocorrências ao Painel pareado e enviar SMS automático aos participantes que concordaram. O SMS enviado pode aparecer no aplicativo de mensagens deste celular.",
         store.flag("share_consent"),
     ) {
         store.flag("share_consent", it)
         if (!it) stopListening()
     }
     check(
-        "Autorizo incluir uma posição recente que eu obtiver com o aplicativo aberto.",
+        "Autorizo obter uma posição pontual ao disparar um alerta ou compartilhar localização, e incluí-la no SMS e na Ocorrência.",
         store.flag("location_consent"),
     ) {
         store.flag("location_consent", it)
@@ -401,6 +417,7 @@ internal fun MainActivity.events() {
                 button("Revisar SMS para um participante", this, true) { sms(r) }
         }
     }
+    evidenceAndSms()
     button("Tentar transmitir fila", secondary = true) { Protocol.pump(this) }
     button("Exportar registros e recibos", secondary = true) {
         confirm(
@@ -472,7 +489,7 @@ internal fun MainActivity.privacy() {
         gap(this, 8)
         addView(
             text(
-                "O Buffer pré-evento vive em RAM e é sobrescrito. Sem gravação pós-disparo e sem envio de áudio. Evidência de áudio depende da avaliação jurídica do projeto.",
+                "O Buffer pré-evento vive em RAM e é sobrescrito. A gravação pós-disparo só existe se você ligar a função; fica cifrada neste aparelho e nunca é enviada. O uso como evidência depende de avaliação jurídica.",
                 14,
                 muted,
             )
@@ -500,6 +517,14 @@ internal fun MainActivity.privacy() {
             )
         )
     }
+    if (debuggable)
+        check(
+            "Modo apresentação (só nesta versão de teste): permite espelhar ou capturar a Área protegida. Desligue depois.",
+            store.flag("demo_mode"),
+        ) {
+            store.flag("demo_mode", it)
+            render()
+        }
     button("Licenças Vosk / JNA / Kotlin", secondary = true) {
         AlertDialog.Builder(this)
             .setTitle("Licenças de terceiros")
