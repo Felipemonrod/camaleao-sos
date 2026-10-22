@@ -191,3 +191,9 @@ transmissões. Não desfaz transmissões já realizadas. Revogar localização i
 incluí-la em novas Ocorrências; registros já assinados preservam seu conteúdo.
 Para suspender a transmissão de registros pendentes, revogue a comunicação.
 As pendências J1 a J5 continuam abertas. A evidência de áudio permanece desabilitada.
+
+Ao atualizar o primeiro protótipo, `LegacyMigration` preserva suas preferências em
+um arquivo cifrado no Store e verifica a leitura antes de limpar as preferências
+antigas. A frase e os contatos são reaproveitados; comunicação, localização e
+calibração exigem nova configuração. A limpeza não garante apagamento físico de
+blocos antigos da memória flash.

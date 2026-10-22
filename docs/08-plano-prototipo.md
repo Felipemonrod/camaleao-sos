@@ -392,6 +392,7 @@ foi marcado como concluído por existir código.
 | Parte | Estado de entrega |
 |---|---|
 | Fachada e Área protegida | calculadora, códigos configuráveis, limpeza ao sair e proteção de captura |
+| Atualização do primeiro protótipo | migração verificada; limites em [docs/07](07-privacidade-lgpd.md#controles-entregues-e-limites-pendentes) |
 | Voz | Vosk PT em dois estágios, teste sem Protocolo SOS e ajuste por amostras |
 | Ciclo de vida | FGS, notificação, sinal de vida, liberação de captura e lembrete após boot |
 | Ocorrência | conteúdo cifrado, manifesto assinado/encadeado, quatro estados e auditoria |

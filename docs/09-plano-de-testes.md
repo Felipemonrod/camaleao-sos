@@ -196,14 +196,14 @@ aceleração WHPX. Data de entrega: 21/10/2026, America/Sao_Paulo.
 | Compilação Android debug | aprovada | `artifacts/final-build.txt` |
 | Testes unitários de domínio | 8 aprovados, zero falhas | relatório Gradle `testDebugUnitTest` |
 | Testes HTTPS/criptografia do servidor | 8 aprovados, zero falhas | `artifacts/server-tests.txt` |
-| Testes instrumentados do Android | 10 aprovados, zero falhas, sem ignorados | `artifacts/device-tests-final.txt` |
-| Android Lint | 0 erros, 14 avisos | `artifacts/lint.html` |
+| Testes instrumentados do Android | 11 aprovados, zero falhas, sem ignorados | `artifacts/device-tests-final.txt` |
+| Android Lint | 0 erros, 15 avisos | `artifacts/lint.html` |
 | Assinatura e alinhamento do APK | assinatura debug v2 e ZIP 16 KiB aprovados | `artifacts/apk-verification.txt` |
 | Invariantes documentais | 10 verificações, zero avisos | `artifacts/sot.txt` |
 | Reinício real do emulador | lembrete de rearme; nenhum serviço de microfone | `artifacts/boot-notifications.txt`, `artifacts/boot-services.txt` |
 
 Os avisos do Lint incluem versões mais recentes de dependências, literais pt-BR,
-uso de API legada de exportação e o `X509TrustManager` do pareamento local. O último
+sugestões de extensões Kotlin e o `X509TrustManager` do pareamento local. O último
 é deliberado e foi exercitado com certificado correto e pin incorreto; não é um
 `trust-all`. Usa fingerprint exato, validade do certificado e verificação padrão de
 hostname. Não há baseline nem configuração para ignorar erros.
@@ -213,6 +213,8 @@ hostname. Não há baseline nem configuração para ignorar erros.
 - Quatro operações e precedência na Fachada; entrada da Área protegida por código;
   `FLAG_SECURE` na Área protegida e retorno à Fachada ao sair do aplicativo.
 - Criptografia AES-GCM, detecção de adulteração e assinatura ECDSA verificável.
+- Migração das preferências do primeiro protótipo para arquivo cifrado antes da
+  limpeza; frase preservada e novos consentimentos de comunicação não presumidos.
 - Cancelar a preparação não consome sequência do manifesto e não permite cancelar
   uma Ocorrência depois de ela entrar na fila.
 - A gramática Vosk foi criada e reconfigurada no modelo incluído. A amostra

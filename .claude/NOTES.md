@@ -171,3 +171,8 @@ A decisão humana sobre notificação e cancelamento foi registrada no
 [ADR 0009](decisions/0009-notificacao-e-cancelamento-protegido.md); apontadores atualizados.
 A observação de gramática apoia o ADR 0002; a questão experimental continua em revisão
 formal do time. As referências de origem e os ADRs aceitos anteriores foram preservados.
+
+Revisão final: migração de atualização verificada e registrada nos documentos donos
+[07](../docs/07-privacidade-lgpd.md#controles-entregues-e-limites-pendentes) e
+[09](../docs/09-plano-de-testes.md#registro-de-execução). A entrega permanece local,
+conforme escolha explícita do responsável; sem publicação remota.

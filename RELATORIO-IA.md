@@ -135,3 +135,8 @@ validação de vítimas/atendimento, conformidade jurídica e os limites de hard
 registrados em [docs/07](docs/07-privacidade-lgpd.md#controles-entregues-e-limites-pendentes).
 A implementação não foi declarada homologada por existir código ou por passar
 em testes sintéticos. Não foi adicionada atribuição de IA em commit ou PR.
+
+Na revisão final, foi acrescentada a migração do primeiro protótipo e seu teste de
+regressão; controles em [docs/07](docs/07-privacidade-lgpd.md#controles-entregues-e-limites-pendentes).
+O responsável escolheu manter somente os arquivos locais. Nenhum commit foi enviado
+ao repositório remoto.

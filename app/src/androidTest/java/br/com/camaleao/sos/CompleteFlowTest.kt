@@ -181,28 +181,65 @@ class CompleteFlowTest {
 
     @Test
     fun outboxRetriesAfterEmulatorNetworkReturns() {
-        org.junit.Assume.assumeTrue(InstrumentationRegistry.getArguments().getString("toggleNetwork") == "true")
+        org.junit.Assume.assumeTrue(
+            InstrumentationRegistry.getArguments().getString("toggleNetwork") == "true"
+        )
         val pairing = InstrumentationRegistry.getArguments().getString("pairing")!!
         val store = Store(context)
         PanelTransport(store).pair(pairing, "https://10.0.2.2:8443")
-        fun shell(command: String) { inst.uiAutomation.executeShellCommand(command).use { descriptor -> java.io.FileInputStream(descriptor.fileDescriptor).use { it.readBytes() } } }
+        fun shell(command: String) {
+            inst.uiAutomation.executeShellCommand(command).use { descriptor ->
+                java.io.FileInputStream(descriptor.fileDescriptor).use { it.readBytes() }
+            }
+        }
         var id = ""
         try {
-            shell("svc wifi disable"); shell("svc data disable"); Thread.sleep(1500)
+            shell("svc wifi disable")
+            shell("svc data disable")
+            Thread.sleep(1500)
             id = Protocol.create(context, "test", true)!!
             Thread.sleep(7500)
             assertEquals("QUEUED", store.record(id)!!.getString("state"))
-        } finally { shell("svc wifi enable"); shell("svc data enable") }
+        } finally {
+            shell("svc wifi enable")
+            shell("svc data enable")
+        }
         val deadline = SystemClock.elapsedRealtime() + 45000
-        while (store.record(id)!!.getString("state") != "ACKNOWLEDGED" && SystemClock.elapsedRealtime() < deadline) Thread.sleep(250)
+        while (
+            store.record(id)!!.getString("state") != "ACKNOWLEDGED" &&
+                SystemClock.elapsedRealtime() < deadline
+        ) Thread.sleep(250)
         assertEquals("ACKNOWLEDGED", store.record(id)!!.getString("state"))
     }
 
     @Test
     fun wrongPinnedCertificateCannotPair() {
         val code = InstrumentationRegistry.getArguments().getString("pairing")!!
-        val wrong = JSONObject(String(DeviceCrypto.un64(code))).put("pin", "0".repeat(64)).toString()
-        assertThrows(Exception::class.java) { PanelTransport(isolated()).pair(DeviceCrypto.b64(wrong.toByteArray()), "https://10.0.2.2:8443") }
+        val wrong =
+            JSONObject(String(DeviceCrypto.un64(code))).put("pin", "0".repeat(64)).toString()
+        assertThrows(Exception::class.java) {
+            PanelTransport(isolated())
+                .pair(DeviceCrypto.b64(wrong.toByteArray()), "https://10.0.2.2:8443")
+        }
+    }
+
+    @Test
+    fun legacyPreferencesArePreservedEncryptedBeforeCleanup() {
+        val name = "legacy-test-${UUID.randomUUID()}"
+        val prefs = context.getSharedPreferences(name, android.content.Context.MODE_PRIVATE)
+        prefs
+            .edit()
+            .putString("phrase", "frase privada de migracao")
+            .putString("contacts", "[]")
+            .putBoolean("share", true)
+            .commit()
+        val store = isolated()
+        LegacyMigration.run(context, store, name)
+        assertTrue(prefs.all.isEmpty())
+        assertEquals("frase privada de migracao", store.phrase())
+        assertTrue(store.get("legacy_archive").contains("frase privada de migracao"))
+        assertFalse(store.flag("share_consent"))
+        assertFalse(store.flag("calibrated"))
     }
 
     private fun find(v: View, value: String): TextView? {
