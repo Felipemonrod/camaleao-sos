@@ -12,7 +12,8 @@ import android.os.PowerManager
 import android.os.SystemClock
 import br.com.camaleao.sos.LiveState
 import br.com.camaleao.sos.domain.PhraseMatcher
-import br.com.camaleao.sos.sos.Protocol
+import br.com.camaleao.sos.domain.VoiceAction
+import br.com.camaleao.sos.sos.Actions
 import br.com.camaleao.sos.sos.Store
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -43,13 +44,16 @@ class SentinelaService : Service() {
         }
         try {
             val n = ServiceNotice.notice(this, "Preparando escuta local…", true)
-            if (Build.VERSION.SDK_INT >= 30)
-                startForeground(
-                    ServiceNotice.ACTIVE,
-                    n,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE,
-                )
+            // Localização só entra no tipo se autorizada: o serviço é criado com o app
+            // visível, condição exigida pelo Android para tipos com permissão while-in-use.
+            val types =
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE or
+                    if (!test && LocationProbe.allowed(this, store))
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+                    else 0
+            if (Build.VERSION.SDK_INT >= 30) startForeground(ServiceNotice.ACTIVE, n, types)
             else startForeground(ServiceNotice.ACTIVE, n)
+            LiveState.foregroundTypes = types
         } catch (_: RuntimeException) {
             LiveState.status = "Desarmada — Android bloqueou o início; confira permissões."
             LiveState.preparing = false
@@ -68,6 +72,7 @@ class SentinelaService : Service() {
 
     private fun capture(test: Boolean) {
         var engine: VoskPipeline? = null
+        val evidence = EvidenceRecorder(this, store)
         var audio: AudioRecord? = null
         val wake =
             getSystemService(PowerManager::class.java)
@@ -80,6 +85,7 @@ class SentinelaService : Service() {
                     store.phrase(),
                     store.threshold(),
                     test,
+                    Actions.commands(store),
                     onPhrase = { text ->
                         LiveState.lastHeard = text
                         LiveState.sampleSerial++
@@ -87,11 +93,25 @@ class SentinelaService : Service() {
                             LiveState.testMatches++
                         LiveState.changed()
                     },
-                    onAlert = { Protocol.create(this, "voice", false) },
+                    onCommand = { action ->
+                        LiveState.lastCommand = action.label
+                        when (action) {
+                            VoiceAction.ALERT -> LiveState.main.post { Actions.alert(this, "voice") }
+                            VoiceAction.LOCATION -> LiveState.main.post { Actions.shareLocation(this) }
+                            VoiceAction.RECORD ->
+                                evidence.start(
+                                    "voice",
+                                    Actions.recordMinutes(store) * 60_000L,
+                                    SystemClock.elapsedRealtime(),
+                                )
+                        }
+                    },
                     onPhase = {
                         LiveState.voicePhase = it
                         LiveState.changed()
                     },
+                    diagnostics =
+                        (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0,
                 )
             if (!running.get()) return
             if (
@@ -112,7 +132,9 @@ class SentinelaService : Service() {
                     16000,
                     AudioFormat.CHANNEL_IN_MONO,
                     AudioFormat.ENCODING_PCM_16BIT,
-                    maxOf(minimum, 8192),
+                    // 4 s: a segunda leitura do estágio 1 bloqueia este laço por ~1–2 s e o
+                    // comando dito logo após a frase não pode se perder nesse intervalo.
+                    maxOf(minimum, 16000 * 2 * 4),
                 )
             recorder = audio
             check(audio.state == AudioRecord.STATE_INITIALIZED)
@@ -165,7 +187,18 @@ class SentinelaService : Service() {
                     engine.cancel()
                     LiveState.cancelCommand = false
                 }
-                engine.accept(pcm, count, SystemClock.elapsedRealtime())
+                val elapsed = SystemClock.elapsedRealtime()
+                if (LiveState.recordRequest) {
+                    LiveState.recordRequest = false
+                    if (!test) evidence.start("manual", Actions.recordMinutes(store) * 60_000L, elapsed)
+                }
+                if (LiveState.stopRecording) {
+                    LiveState.stopRecording = false
+                    evidence.stop("parada pela usuária")
+                }
+                // O mesmo bloco vai para a gravação e para o reconhecimento (RF-29).
+                evidence.accept(pcm, count, elapsed)
+                engine.accept(pcm, count, elapsed)
                 val now = System.currentTimeMillis()
                 if (now - lastBeat > 5000) {
                     lastBeat = now
@@ -184,6 +217,7 @@ class SentinelaService : Service() {
             LiveState.status = "Desarmada — biblioteca de voz incompatível com este aparelho"
         } finally {
             running.set(false)
+            runCatching { evidence.stop("Sentinela desarmada") }
             runCatching { audio?.stop() }
             audio?.release()
             recorder = null

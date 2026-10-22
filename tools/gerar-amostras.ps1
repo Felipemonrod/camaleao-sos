@@ -1,4 +1,4 @@
-# Amostras sintéticas locais; não são medição de precisão com pessoas reais.
+﻿# Amostras sintéticas locais; não são medição de precisão com pessoas reais.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Speech
 $destination = Join-Path (Split-Path $PSScriptRoot) 'app/src/androidTest/assets'
@@ -9,7 +9,7 @@ try {
     if (-not $voice) { throw 'Instale uma voz de texto para fala pt-BR no Windows para gerar as amostras.' }
     $synth.SelectVoice($voice.VoiceInfo.Name)
     $format = New-Object System.Speech.AudioFormat.SpeechAudioFormatInfo(16000,[System.Speech.AudioFormat.AudioBitsPerSample]::Sixteen,[System.Speech.AudioFormat.AudioChannel]::Mono)
-    foreach ($clip in @(@{Name='frase';Text='Preciso buscar meu caderno azul'},@{Name='negativo';Text='Vou buscar meu caderno azul'},@{Name='comando';Text='Enviar alerta'})) {
+    foreach ($clip in @(@{Name='frase';Text='Preciso buscar meu caderno azul'},@{Name='negativo';Text='Vou buscar meu caderno azul'},@{Name='comando';Text='Enviar alerta'},@{Name='carro';Text='Preciso buscar meu carro azul'},@{Name='contexto';Text='Olha, preciso buscar meu caderno azul agora'},@{Name='localizacao';Text='Compartilhar localização'},@{Name='gravar';Text='Gravar evidência'})) {
         $synth.SetOutputToWaveFile((Join-Path $destination ($clip.Name + '.wav')), $format)
         $synth.Speak($clip.Text)
     }

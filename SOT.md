@@ -83,6 +83,8 @@ fechada nos documentos acima** — aponte para o ADR.
 | [0007](.claude/decisions/0007-frase-nao-e-autenticacao.md) | A frase não é credencial; sem verificação de locutor no MVP | aceito |
 | [0008](.claude/decisions/0008-kotlin-nativo-sem-flutter.md) | Protótipo 100 % Kotlin nativo, sem Flutter | aceito |
 | [0009](.claude/decisions/0009-notificacao-e-cancelamento-protegido.md) | Notificação clara e cancelamento dentro da Área protegida | aceito |
+| [0010](.claude/decisions/0010-palavra-por-funcao-e-sms-automatico.md) | Palavra por função na janela de comando; SMS automático à Rede de Apoio | aceito |
+| [0011](.claude/decisions/0011-estagio-1-com-iscas-e-segunda-leitura.md) | Estágio 1 com iscas na gramática e segunda leitura do Buffer pré-evento | aceito, condicionado à medição com voz real |
 
 **Anotações cronológicas** do dia a dia vão em [`.claude/NOTES.md`](.claude/NOTES.md).
 

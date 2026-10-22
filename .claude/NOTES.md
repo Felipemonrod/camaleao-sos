@@ -195,3 +195,42 @@ A primeira execução remota parou em `setup-android`, ao tentar instalar o paco
 [`android.yml`](../.github/workflows/android.yml) passa a indicar os componentes
 usados pela compilação. O resultado da execução original está no
 [job do GitHub Actions](https://github.com/Felipemonrod/camaleao-sos/actions/runs/39777720370/job/119820816885).
+
+## 2026-10-22 — Funções por voz, SMS, voz medida e passagem de sessão
+
+Decisões do responsável em [ADR 0010](decisions/0010-palavra-por-funcao-e-sms-automatico.md);
+estágio 1 refeito em [ADR 0011](decisions/0011-estagio-1-com-iscas-e-segunda-leitura.md);
+números em [docs/06](../docs/06-reconhecimento-de-voz.md#ajuste-medido-do-estágio-1-e-das-palavras)
+e execução em [docs/09](../docs/09-plano-de-testes.md#registro-de-execução).
+
+O responsável **adiou a avaliação jurídica** da gravação para depois do hackathon
+(Q3 e J1 continuam abertas). Pediu testes só no Galaxy S25 pessoal, sem emulador:
+não mexer em Wi-Fi/dados/configurações do aparelho e apagar os dados do app
+(`pm clear br.com.camaleao.sos`) ao fim de cada rodada.
+
+Achados que valem lembrar:
+
+- Defeito antigo corrigido: a gramática era montada sem acentos; o vocabulário do
+  modelo é acentuado e o Vosk descarta palavra ausente sem erro.
+- `server/setup.mjs` usava o primeiro IP do Windows (no PC, o do Radmin VPN): agora
+  lista as redes, ignora adaptadores virtuais e aceita `--ip`/`--renovar`.
+- Testes que apagam a tela deixam o aparelho bloqueado: ficam em `ScreenOffTest`, que
+  `tools/validar.ps1` roda por último; o script recusa começar com o celular bloqueado.
+- SMS: o S25 do responsável tem a operadora recusando SMS; outro aparelho enviou.
+
+### Passagem para a próxima sessão
+
+Pendente, em ordem:
+
+1. Bateria completa no S25 com a tela desbloqueada de fato (`tools/validar.ps1 -Serial <serial do aparelho>`).
+2. APK de **release assinado** + página com QR para a banca instalar; o responsável sobe
+   na Cloudflare manualmente. Testar a instalação num celular sem modo desenvolvedor
+   (risco de o Play Protect bloquear: perfil parecido com stalkerware).
+3. Sessão com a voz real (roteiro em docs/08) e medição de bateria fora do carregador.
+4. Ensaio da demo no hotspot: `tools/preparar-notebook.ps1 -Ip <ip> -Renovar` no notebook.
+
+Ambiente: notebook `desktop-6gaa1oa` acessível por SSH via Tailscale com chave dedicada
+(`~/.ssh/id_camaleao_notebook`, só no PC do responsável); projeto copiado em
+`C:\Users\felipe\Documents\camaleao-sos` (cópia de arquivos, não clone do Git); firewall
+8443 liberado só em rede Privada. Corpus e avaliador de voz em `tools/voz/`
+(dados em `dados-brutos/`, ignorado).

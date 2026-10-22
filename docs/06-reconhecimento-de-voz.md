@@ -229,7 +229,65 @@ SHA-256 em `tools/preparar-modelos.py`; o README original é preservado em asset
 Não é incluído modelo sherpa-onnx em inglês apresentado como português.
 
 `VoskPipeline` mantém um modelo e um recognizer, alterando a gramática entre os dois
-estágios. O ajuste local requer três leituras positivas e pelo menos uma negativa;
+estágios; desde o [ADR 0011](../.claude/decisions/0011-estagio-1-com-iscas-e-segunda-leitura.md)
+há também um recognizer sem gramática para a segunda leitura.
+
+## Ajuste medido do estágio 1 e das palavras
+
+### Corpus e método
+
+`tools/voz/gerar_corpus.py` sintetiza 3.315 amostras (16 kHz) em `dados-brutos/voz/`,
+ignorado pelo Git: 13 locutores sintéticos (Microsoft Maria e Daniel via WinRT; Piper
+`faber`, `cadu`, `jeff`, `edresson`; cada um com tom normal e alterado), 3 frases de
+segurança, a frase sozinha e dentro de falas maiores, 10–12 negativos difíceis por
+frase, 80 frases de conversa e TV, comandos e não-comandos.
+
+**Separação:** 6 locutores de **ajuste** escolhem parâmetros; 7 de **teste** nunca
+entram no ajuste. As 3 leituras de calibração de cada locutor ficam fora da medição.
+
+`tools/voz/avaliar.py` reproduz o app no PC — mesmo modelo, blocos de 1600 amostras,
+resultado por endpoint — em cinco condições: limpo, ruído rosa a 20 e 10 dB, TV
+(fala de outros locutores) a 10 dB e longe (reverberação, −14 dB, ruído a 15 dB).
+
+⚠️ São vozes **sintéticas**: duas delas degradadas (Piper `edresson` de baixa
+qualidade e tons alterados por reamostragem). Não substituem o protocolo com pessoas
+de [docs/09](09-plano-de-testes.md); servem para comparar estratégias.
+
+### Resultados — locutores de teste, frase sozinha
+
+| Estratégia | Limpo | TV 10 dB | Longe | Negativo difícil dispara | Conversa dispara |
+|---|---|---|---|---|---|
+| Anterior (frase exata) | 100 %¹ | — | — | 10–12 %¹ | 0 |
+| Iscas + 2ª leitura 0,70 + junção (**entregue**) | 81 % | 54 % | 43 % | 0,8–2,0 % | **0 em 474 min** |
+| Mesma, limiar 0,65 | 81 % | 57 % | — | ~2 % | 0 |
+
+¹ medido com 6 locutores, voz limpa e ruído 10 dB; a frase dentro de fala caía para
+77–83 %. Combinações locutor×frase cuja calibração passa (o app não arma sem ela):
+82,7 % de detecção média nas cinco condições, 1,5 % de negativo difícil aceito.
+
+A perda concentra-se em `edresson` e nos tons alterados: vozes naturais ficam entre
+94 e 100 % em voz limpa. O erro típico é a primeira palavra engolida ("olha buscar meu
+caderno azul") — o mesmo padrão observado em gravação real. Ver a decisão de não
+afrouxar a primeira palavra no ADR 0011.
+
+**Comandos** (estágio 2, gramática com iscas): 98–100 % de comando certo, **0 %** de
+função trocada por outra; fala comum vira `cancelar` em ~3 % — sem efeito, só fecha a
+janela.
+
+### Vocabulário acentuado
+
+O vocabulário do `small-pt-0.3` é acentuado: contém "localização" e "não", não contém
+"localizacao" nem "nao". O Vosk também não decodifica escapes `ç` na gramática
+JSON. Palavra ausente é descartada com um aviso de log e a frase nunca seria
+detectada. A gramática usa `PhraseMatcher.grammarForm` (com acentos) e a comparação
+usa `normalize` (sem acentos); `Vocabulary.missing` confere cada palavra ao salvar.
+
+### Voz real
+
+Uma gravação de 29 s (WhatsApp, Opus, saturada) com negativos difíceis reais ("tenho
+que buscar o meu caderno azul"), comandos e conversa: 3/3 negativos recusados,
+comando reconhecido, nenhum disparo. A frase correta falada por pessoa **ainda não foi
+medida**. O ajuste local requer três leituras positivas e pelo menos uma negativa;
 calcula a separação textual e recusa salvar sem separação. Isto não substitui o
 protocolo de FAR/FRR de [docs/09](09-plano-de-testes.md). Frase parecida do roteiro foi
 usada como negativo sintético; não foi realizado corpus de centenas de horas.

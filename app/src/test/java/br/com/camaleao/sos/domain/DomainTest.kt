@@ -84,7 +84,7 @@ class DomainTest {
         val v = VoiceFlow("preciso buscar meu caderno azul", 1.0)
         assertNull(v.command("enviar alerta", 0))
         v.phrase("preciso buscar meu caderno azul", 100)
-        assertEquals("alert", v.command("enviar alerta", 500))
+        assertEquals("alerta", v.command("enviar alerta", 500))
         assertEquals(VoicePhase.SOS_EVENT, v.phase)
     }
 }

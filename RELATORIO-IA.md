@@ -164,3 +164,21 @@ oficial de compatibilidade do AGP. A lista de pacotes do SDK foi explicitada no
 workflow, sem alteração do aplicativo ou das decisões de produto.
 
 Diagnóstico e execução original: [anotação da sessão](.claude/NOTES.md#2026-10-22--correção-da-preparação-do-android-no-ci).
+
+## 2026-10-22 — Funções por voz, SMS, localização, gravação e medição de voz com Claude Code
+
+**Solicitação humana:** restaurar o ambiente de desenvolvimento, elevar o acerto da
+Sentinela usando voz sintética, e implementar contato de emergência, localização e
+gravação acionados por palavra escolhida; depois, preparar o notebook e a demonstração.
+
+**Trabalho realizado:** corpus sintético de 13 vozes e avaliador reproduzindo o app;
+comparação de estratégias e nova regra do estágio 1; palavras por função, SMS
+automático, localização pontual, gravação cifrada, checagem de vocabulário; testes
+unitários e instrumentados; testes no Galaxy S25 do responsável; kit de teste de SMS
+por Wi-Fi; setup do Painel com escolha de rede; preparação remota do notebook via
+Tailscale. Decisões humanas registradas nos ADRs 0010 e 0011.
+
+**Revisão humana necessária:** acerto com voz de pessoas reais, bateria fora do
+carregador, instalação por terceiros (Play Protect), conteúdo do SMS e as pendências
+jurídicas adiadas. Nenhum resultado sintético foi apresentado como medição com pessoas.
+Sem atribuição de IA em commit ou PR (AGENTS.md R10).

@@ -254,3 +254,30 @@ chamada/Bluetooth, biometria e avaliação jurídica não foram declarados aprov
 As capturas Android em `artifacts/screenshots` são reais; o teste remove `FLAG_SECURE`
 apenas na sua própria sessão para fotografar telas sem dados pessoais. O APK não
 contém opção para desabilitar essa proteção.
+
+### Execução de 22/10/2026 — funções por voz, SMS e aparelho real
+
+Ambiente: Galaxy S25 (SM-S931B), Android 16/API 36, arm64, chip VIVO no slot 2, via
+USB e Wi-Fi; notebook Windows com Painel local; Vosk `small-pt-0.3`. Mudanças em
+[ADR 0010](../.claude/decisions/0010-palavra-por-funcao-e-sms-automatico.md) e
+[ADR 0011](../.claude/decisions/0011-estagio-1-com-iscas-e-segunda-leitura.md).
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Testes unitários | 14 aprovados (8 anteriores + 6 de funções e SMS) |
+| Testes do Painel (Node) | 8 aprovados |
+| Instrumentados no S25 (`CompleteFlowTest`) | 13 aprovados e 2 ignorados por regra: alternar rede (só emulador) e SMS sem número autorizado |
+| Instrumentados no emulador API 36 | 15 aprovados, incluindo SMS com link de mapa e alerta cancelado sem SMS |
+| Voz no motor real (amostras sintéticas) | frase dentro de fala aceita; "Preciso buscar meu carro azul" recusada; cada palavra aciona sua função; função desligada não é ouvida |
+| Vocabulário | "localizacao" detectada como ausente do modelo; "localização" presente |
+| Gravação | blocos AES-GCM; adulterar 1 byte impede exportar; PCM não aparece em claro |
+| Tela apagada, Sentinela armada (S25) | serviço `microphone\|location`; posição obtida (±53 m, leitura nova ou última com < 2 min); gravação de 3 s pelo microfone real exportada e conferida |
+| 30 min armada, tela apagada, no carregador (S25) | 60/60 amostras ativa; sinal de vida ≤ 4 s; PSS 170–208 MB; CPU média 10,5 % de um núcleo (pico 11,8 %) |
+| Painel do notebook pelo Wi-Fi (S25 → notebook) | pareamento com pin, dois manifestos `ACKNOWLEDGED` com recibo verificado |
+| SMS real pelo S25 | recusado pela operadora (`480` no IMS, `SYSTEM_ERR` no rádio) para dois números; o app registrou `FALHOU` |
+| SMS real em outro aparelho, pelo kit `tools/kit-sms` | **relatado pelo responsável** como enviado; relatório do kit não visto nesta sessão |
+| Medição de voz no corpus sintético | ver [docs/06](06-reconhecimento-de-voz.md#ajuste-medido-do-estágio-1-e-das-palavras) |
+
+**Limites desta execução:** o teste de 30 min ocorreu em silêncio e no carregador:
+não mede falso positivo em conversa nem bateria (RNF-05), e sem Doze. A frase falada
+por pessoa real ainda não foi medida. O SMS entregue não foi observado diretamente.

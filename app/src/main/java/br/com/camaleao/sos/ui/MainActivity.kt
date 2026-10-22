@@ -45,6 +45,7 @@ class MainActivity : ComponentActivity() {
     internal var capturedSerial = -1
     private var lastSnapshot = ""
     internal var locator: PositionRequest? = null
+    internal var pendingExport = ""
     private val updates: () -> Unit = {
         if (page != "calculator") {
             status?.text = LiveState.status
@@ -106,6 +107,13 @@ class MainActivity : ComponentActivity() {
         negatives.clear()
         super.onStop()
     }
+
+    /** Só em build debug: libera espelhamento da Área protegida para apresentar. */
+    internal val debuggable
+        get() = (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+
+    internal val presenting
+        get() = debuggable && store.flag("demo_mode")
 
     internal fun dp(n: Int) = (resources.displayMetrics.density * n).toInt()
 
@@ -220,7 +228,8 @@ class MainActivity : ComponentActivity() {
         heartbeat = null
         phase = null
         sample = null
-        if (page == "calculator") window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        if (page == "calculator" || presenting)
+            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         else window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         root =
             LinearLayout(this).apply {
@@ -252,7 +261,10 @@ class MainActivity : ComponentActivity() {
                     gravity = Gravity.CENTER_VERTICAL
                     setPadding(dp(24), dp(16), dp(24), dp(8))
                 }
-            top.addView(text("◔ camaleão", 22, green, true), LinearLayout.LayoutParams(0, -2, 1f))
+            top.addView(
+                text(if (presenting) "◔ camaleão · APRESENTAÇÃO" else "◔ camaleão", 22, if (presenting) Color.rgb(196, 80, 30) else green, true),
+                LinearLayout.LayoutParams(0, -2, 1f),
+            )
             top.addView(
                 text("Fechar", 14, muted, true).apply {
                     setPadding(dp(12), dp(12), dp(12), dp(12))
@@ -274,6 +286,7 @@ class MainActivity : ComponentActivity() {
                 "calibration" -> calibration()
                 "network" -> network()
                 "contacts" -> contacts()
+                "functions" -> functions()
                 "events" -> events()
                 "privacy" -> privacy()
                 else -> home()
@@ -351,7 +364,7 @@ class MainActivity : ComponentActivity() {
                         navigate(if (store.flag("configured")) "home" else "setup")
                         return
                     }
-                    "sos" -> Protocol.create(this, "code", false)
+                    "sos" -> Actions.alert(this, "code")
                 }
                 expression =
                     runCatching { Calculator.calculate(expression.replace('−', '-')) }
@@ -468,5 +481,24 @@ class MainActivity : ComponentActivity() {
                     .onSuccess { toast("Registros exportados. Guarde em local seguro.") }
                     .onFailure { toast("Não foi possível exportar.") }
             }
+        if (code == 71 && result == RESULT_OK && pendingExport.isNotBlank()) {
+            val id = pendingExport
+            pendingExport = ""
+            data?.data?.let { uri ->
+                executor.execute {
+                    val r = runCatching {
+                        contentResolver.openOutputStream(uri)?.use {
+                            EvidenceRecorder.exportWav(this, store, id, it)
+                        }
+                    }
+                    runOnUiThread {
+                        toast(
+                            if (r.isSuccess) "Gravação exportada e conferida pelo hash."
+                            else "Falha na exportação: ${r.exceptionOrNull()?.message?.take(80)}"
+                        )
+                    }
+                }
+            }
+        }
     }
 }

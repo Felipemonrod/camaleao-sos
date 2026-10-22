@@ -82,6 +82,16 @@ completa · **P2** = desejável · **P3** = pós-protótipo.
 | RF-52 | Os logs nunca contêm a Frase de Segurança, transcrição completa, GPS ou chaves. | P0 |
 | RF-53 | O app **não** afirma que a gravação é prova judicial válida. Afirma apenas preservar integridade e rastreabilidade. | P0 |
 
+### Funções por voz e Rede de Apoio — ver ADR 0010
+
+| ID | Requisito | Pri |
+|---|---|---|
+| RF-54 | Cada função (alerta, localização, gravação) tem palavra escolhida pela usuária e liga/desliga próprio. Só funções ligadas entram na gramática da `COMMAND_WINDOW`. | P1 |
+| RF-55 | As palavras não repetem palavras da Frase de Segurança, não se parecem entre si nem com `cancelar`, e toda palavra é conferida no vocabulário do modelo antes de salvar. | P0 |
+| RF-56 | A função de alerta envia SMS automático a toda a Rede de Apoio, com link de mapa quando houver posição, somente depois da preparação local e nunca se ela for cancelada. | P1 |
+| RF-57 | O registro de SMS distingue pendente, aceito pela operadora e falha. Entrega ao destinatário não é afirmada. | P0 |
+| RF-58 | A função de localização envia a posição pontual por SMS e repete em intervalo fixo apenas enquanto a Sentinela estiver armada. | P2 |
+
 ## Requisitos não funcionais
 
 | ID | Requisito | Pri |

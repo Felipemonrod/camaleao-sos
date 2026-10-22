@@ -12,6 +12,18 @@ object PhraseMatcher {
             .trim()
             .replace(Regex("\\s+"), " ")
 
+    /**
+     * Forma enviada à gramática do Vosk: minúsculas e sem pontuação, mas COM acentos.
+     * O vocabulário do modelo é acentuado ("localização", "não"); a forma sem acento
+     * seria descartada da gramática sem erro, só com um aviso no log.
+     */
+    fun grammarForm(value: String) =
+        value
+            .lowercase(Locale.ROOT)
+            .replace(Regex("[^\\p{L}\\p{N} ]"), " ")
+            .trim()
+            .replace(Regex("\\s+"), " ")
+
     fun words(value: String) = normalize(value).split(' ').filter(String::isNotBlank)
 
     fun similarity(a: String, b: String): Double {
@@ -28,6 +40,17 @@ object PhraseMatcher {
             row = next
         }
         return 1.0 - row.last().toDouble() / max(x.length, y.length)
+    }
+
+    /** Maior similaridade entre a frase e qualquer trecho contíguo de mesmo tamanho. */
+    fun bestWindow(expected: String, heard: String): Double {
+        val target = words(expected)
+        val got = words(heard)
+        if (got.isEmpty()) return 0.0
+        if (got.size <= target.size) return similarity(expected, heard)
+        return (0..got.size - target.size).maxOf {
+            similarity(target.joinToString(" "), got.subList(it, it + target.size).joinToString(" "))
+        }
     }
 
     fun accepts(expected: String, actual: String, threshold: Double): Boolean {
