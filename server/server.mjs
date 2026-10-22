@@ -4,8 +4,9 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createPublicKey, randomBytes } from 'node:crypto';
 import { hash, sign, verify, equal, encrypt, decrypt } from './crypto.mjs';
+import { createDialer, phoneOk } from './discador.mjs';
 
-export function createPanelServer({ directory = dirname(fileURLToPath(import.meta.url)), port = 8443, host = '0.0.0.0' } = {}) {
+export function createPanelServer({ directory = dirname(fileURLToPath(import.meta.url)), port = 8443, host = '0.0.0.0', dialer: dialerOptions = {} } = {}) {
   const dataDir = join(directory, 'data'), config = JSON.parse(readFileSync(join(dataDir, 'config.json')));
   const storageKey = Buffer.from(config.storageKey, 'base64'), statePath = join(dataDir, 'state.bin');
   let state = existsSync(statePath) ? decrypt(storageKey, readFileSync(statePath)) : { devices: {}, events: {} };
@@ -14,6 +15,10 @@ export function createPanelServer({ directory = dirname(fileURLToPath(import.met
   const publicKey = createPublicKey(config.privateKey).export({ format: 'der', type: 'spki' }).toString('base64');
   const list = () => Object.values(state.events).map(x => ({ ...JSON.parse(x.manifest), receipt: JSON.parse(x.receipt) })).sort((a, b) => b.created_at.localeCompare(a.created_at));
   const broadcast = () => { for (const res of clients) res.write(`data: ${JSON.stringify(list())}\n\n`); };
+  // Telefones da Rede de Apoio ficam só na memória do discador, nunca em state.bin.
+  const calls = () => `event: calls\ndata: ${JSON.stringify(dialer.list())}\n\n`;
+  const dialer = createDialer({ ...dialerOptions, onChange: () => { for (const res of clients) res.write(calls()); } });
+  const seenCalls = new Map();
   function json(res, code, object) { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(object)); }
   async function body(req) {
     let bytes = 0, chunks = []; for await (const chunk of req) { bytes += chunk.length; if (bytes > 65536) throw Error('size'); chunks.push(chunk); }
@@ -43,11 +48,12 @@ export function createPanelServer({ directory = dirname(fileURLToPath(import.met
         state.devices[b.device_id] = device; save();
         return json(res, 200, { token: device.token, server_public_key: publicKey });
       }
-      if (req.method === 'GET' && (url.pathname === '/api/events' || url.pathname === '/api/stream')) {
+      if (req.method === 'GET' && ['/api/events', '/api/stream', '/api/calls'].includes(url.pathname)) {
         if (!equal(token, config.adminToken)) return json(res, 401, { error: 'Acesso não autorizado.' });
         if (url.pathname === '/api/events') return json(res, 200, list());
+        if (url.pathname === '/api/calls') return json(res, 200, dialer.list());
         res.writeHead(200, { 'Content-Type': 'text/event-stream', Connection: 'keep-alive' });
-        res.write(`data: ${JSON.stringify(list())}\n\n`); clients.add(res);
+        res.write(`data: ${JSON.stringify(list())}\n\n`); res.write(calls()); clients.add(res);
         const keepalive = setInterval(() => res.write(': heartbeat\n\n'), 20000);
         req.on('close', () => { clearInterval(keepalive); clients.delete(res); }); return;
       }
@@ -70,6 +76,24 @@ export function createPanelServer({ directory = dirname(fileURLToPath(import.met
         device.sequence = manifest.sequence; device.lastHash = digest; save(); broadcast();
         return json(res, 200, { receipt, signature: receiptSignature });
       }
+      if (req.method === 'POST' && url.pathname === '/api/call') {
+        const b = await body(req), call = typeof b.request === 'string' ? JSON.parse(b.request) : null;
+        const device = call && state.devices[call.device_id];
+        if (!device || !equal(token, device.token)) return json(res, 401, { error: 'Dispositivo não autorizado.' });
+        const key = createPublicKey({ key: Buffer.from(device.publicKey, 'base64'), type: 'spki', format: 'der' });
+        if (!verify(key, b.request, b.signature)) return json(res, 400, { error: 'Assinatura inválida.' });
+        const age = Date.now() - Date.parse(call.created_at);
+        if (!/^[a-f0-9-]{36}$/.test(call.request_id) || !(age > -60000 && age < 120000) || !Array.isArray(call.phones) || !call.phones.length || call.phones.length > 10 || !call.phones.every(phoneOk) || typeof call.message !== 'string' || !call.message.trim() || call.message.length > 500) return json(res, 400, { error: 'Pedido de ligação inválido.' });
+        if (seenCalls.has(call.request_id)) return json(res, 200, seenCalls.get(call.request_id));
+        if (!dialer.available()) return json(res, 503, { error: 'Discador indisponível. O aparelho liga por conta própria.' });
+        const job = dialer.start({ deviceId: call.device_id, phones: call.phones, message: call.message });
+        seenCalls.set(call.request_id, { call_id: job.id, status: job.status }); return json(res, 200, seenCalls.get(call.request_id));
+      }
+      const cancel = url.pathname.match(/^\/api\/calls\/([a-f0-9-]{36})\/cancel$/);
+      if (req.method === 'POST' && cancel) {
+        if (!equal(token, config.adminToken)) return json(res, 401, { error: 'Acesso não autorizado.' });
+        return json(res, dialer.cancel(cancel[1]) ? 200 : 404, { cancelled: true });
+      }
       json(res, 404, { error: 'Recurso não encontrado.' });
     } catch { if (!res.headersSent) json(res, 400, { error: 'Requisição inválida.' }); else res.end(); }
   });
@@ -78,5 +102,5 @@ export function createPanelServer({ directory = dirname(fileURLToPath(import.met
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const app = createPanelServer({ port: Number(process.env.PORT || 8443) });
-  await app.listen(); console.log('Painel local pronto em HTTPS:8443. Sem integração com centrais públicas.');
+  await app.listen(); console.log(`Painel local pronto em HTTPS:8443. Discador: ${process.env.DISCADOR || 'desligado'}. Sem integração com centrais públicas.`);
 }

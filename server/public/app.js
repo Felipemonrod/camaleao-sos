@@ -18,6 +18,24 @@ function render(events) {
     dl.append(dt, dd); card.append(dl); $('events').append(card);
   }
 }
+function renderCalls(calls) {
+  $('calls').replaceChildren();
+  for (const call of calls) {
+    const card = document.createElement('article'); card.className = 'card event';
+    const head = document.createElement('header'), h = document.createElement('h2'), tag = document.createElement('span');
+    h.textContent = 'Ligação para a Rede de Apoio'; tag.className = 'tag'; tag.textContent = call.done ? 'ENCERRADA' : 'EM ANDAMENTO'; head.append(h, tag); card.append(head);
+    const p = document.createElement('p'); p.textContent = call.status; card.append(p);
+    const ul = document.createElement('ul');
+    for (const a of call.attempts) { const li = document.createElement('li'); li.textContent = `${new Date(a.at).toLocaleTimeString('pt-BR')} · ${a.to} · ${a.result}`; ul.append(li); }
+    card.append(ul);
+    if (!call.done) {
+      const b = document.createElement('button'); b.className = 'secondary'; b.textContent = 'Parar de ligar';
+      b.addEventListener('click', () => fetch(`/api/calls/${call.id}/cancel`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } }));
+      card.append(b);
+    }
+    $('calls').append(card);
+  }
+}
 async function connect() {
   controller?.abort(); controller = new AbortController(); $('connection').textContent = 'Conectando…';
   try {
@@ -28,7 +46,7 @@ async function connect() {
     while (true) {
       const { value, done } = await reader.read(); if (done) throw Error('Conexão encerrada. Reconecte para atualizar.');
       pending += decoder.decode(value, { stream: true }); let end;
-      while ((end = pending.indexOf('\n\n')) >= 0) { const line = pending.slice(0, end); pending = pending.slice(end + 2); if (line.startsWith('data: ')) render(JSON.parse(line.slice(6))); }
+      while ((end = pending.indexOf('\n\n')) >= 0) { const line = pending.slice(0, end); pending = pending.slice(end + 2); if (line.startsWith('event: calls\ndata: ')) renderCalls(JSON.parse(line.slice(19))); else if (line.startsWith('data: ')) render(JSON.parse(line.slice(6))); }
     }
   } catch (e) { if (e.name !== 'AbortError') { $('connection').textContent = '○ Desconectado'; $('error').textContent = e.message; $('login').hidden = false; } }
 }

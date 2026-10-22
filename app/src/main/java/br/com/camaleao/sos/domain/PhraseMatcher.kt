@@ -53,6 +53,10 @@ object PhraseMatcher {
         }
     }
 
+    /** O texto é a frase inteira, sem nada a mais: a forma que o teste devolve no acerto. */
+    fun recognized(expected: String, heard: String) =
+        words(expected).let { it.size >= 3 && it == words(heard) }
+
     fun accepts(expected: String, actual: String, threshold: Double): Boolean {
         val wanted = words(expected)
         val heard = words(actual)
@@ -60,6 +64,18 @@ object PhraseMatcher {
         // Evita que a semelhança da cauda aceite outro início, como "vou buscar...".
         if (similarity(wanted.first(), heard.first()) < .9) return false
         return similarity(expected, actual) >= threshold
+    }
+
+    /**
+     * Exigência pessoal da segunda leitura, em fração: o meio entre a pior positiva e a
+     * negativa mais parecida, nunca abaixo de [floor]. Null se elas não se separam.
+     */
+    fun personalVerify(positives: List<Int>, negatives: List<Int>, floor: Double): Double? {
+        if (positives.size < 3 || negatives.isEmpty()) return null
+        val worst = positives.min()
+        val closest = negatives.max()
+        if (worst <= closest) return null
+        return maxOf(floor, (worst + closest) / 200.0)
     }
 
     fun calibratedThreshold(

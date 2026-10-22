@@ -33,6 +33,10 @@ class VoskPipeline(
     private val onPhase: (String) -> Unit,
     /** Só em build debug: eventos e notas para medição com voz real, nunca texto (RF-52). */
     private val diagnostics: Boolean = false,
+    /** Nota mínima da segunda leitura; a calibração pode subir o padrão para esta voz. */
+    private val verify: Double = Stage1.VERIFY,
+    /** Modo escolhido pela usuária: a frase sozinha aciona todas as funções ligadas. */
+    private val phraseFires: Boolean = false,
 ) : AutoCloseable {
     init {
         LibVosk.setLogLevel(LogLevel.WARNINGS)
@@ -67,29 +71,35 @@ class VoskPipeline(
         val result = JSONObject(recognizer.result)
         val text = result.optString("text")
         if (flow.phase == VoicePhase.WAITING_KEYWORD) {
-            if (test) {
-                if (text.isNotBlank())
-                    onPhrase(
-                        if (Stage1.found(Stage1.words(result), target) && verified())
-                            target.joinToString(" ")
-                        else text
-                    )
-                return
-            }
             // O endpoint pode cortar a frase numa micro-pausa: junta com o resultado
-            // anterior se ele acabou há pouco.
+            // anterior se ele acabou há pouco. O teste usa a mesma regra do modo armado,
+            // senão a calibração recusa o que a Sentinela aceitaria.
             val current = Stage1.words(result)
             val joined = if (now - carryAt <= CARRY_MS) carry + current else current
             carry = current
             carryAt = now
             val hit = Stage1.found(joined, target)
             val ok = hit && verified()
+            if (test) {
+                if (ok) carry = emptyList()
+                if (text.isNotBlank()) onPhrase(if (ok) target.joinToString(" ") else text)
+                return
+            }
             if (current.isNotEmpty() || hit)
                 log(
                     if (!hit) "fala sem a frase (${current.size} palavras)"
                     else if (ok) "FRASE aceita nota=$lastScore"
                     else "frase recusada na 2a leitura nota=$lastScore"
                 )
+            if (ok && phraseFires) {
+                log("FRASE dispara todas as funções")
+                val enabled = commands.filter { it.enabled }.map { it.action }
+                if (VoiceAction.ALERT in enabled) onPhase(VoicePhase.SOS_EVENT.name)
+                // Alerta primeiro: a ligação, se houver, vem depois do SMS.
+                enabled.sortedBy { it.ordinal }.forEach(onCommand)
+                waiting()
+                return
+            }
             if (ok && flow.open(now)) {
                 recognizer.reset()
                 recognizer.setGrammar(commandGrammar())
@@ -135,7 +145,7 @@ class VoskPipeline(
         ordered.fill(0)
         verifier.reset()
         lastScore = "%.2f".format(java.util.Locale.ROOT, PhraseMatcher.bestWindow(phrase, text))
-        return PhraseMatcher.bestWindow(phrase, text) >= Stage1.VERIFY
+        return PhraseMatcher.bestWindow(phrase, text) >= verify
     }
 
     private var lastScore = ""

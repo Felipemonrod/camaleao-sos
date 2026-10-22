@@ -11,6 +11,7 @@ class FunctionsTest {
             VoiceCommand(VoiceAction.ALERT, alert, true),
             VoiceCommand(VoiceAction.LOCATION, location, on),
             VoiceCommand(VoiceAction.RECORD, record, on),
+            VoiceCommand(VoiceAction.CALL, VoiceAction.CALL.defaultWords, on),
         )
 
     @Test
@@ -57,5 +58,53 @@ class FunctionsTest {
         val m = AlertMessage.alert("Socorro", Position(-23.5505199, -46.6333094, 12.7f, 3))
         assertEquals("Socorro Localização: https://maps.google.com/?q=-23.55052,-46.63331 (±12 m)", m)
         assertTrue(AlertMessage.location(null, 0).contains("indisponível"))
+    }
+
+    @Test
+    fun callMessagesNeverInventPosition() {
+        assertTrue(AlertMessage.openLine(null).contains("indisponível"))
+        assertFalse(AlertMessage.spoken("", null).contains("http"))
+        val p = Position(-23.55052, -46.63331, 12f, 3)
+        assertTrue(AlertMessage.openLine(p).contains("-23.55052, -46.63331"))
+        assertTrue(AlertMessage.spoken("", p).contains("enviada por SMS"))
+    }
+
+    @Test
+    fun onlyRecognizedReadingsCountAsPositive() {
+        val p = "Preciso buscar meu caderno azul"
+        assertTrue(PhraseMatcher.recognized(p, "preciso buscar meu caderno azul"))
+        assertFalse(PhraseMatcher.recognized(p, "o preciso buscar meu caderno azul"))
+        assertFalse(PhraseMatcher.recognized(p, "preciso buscar meu carro azul"))
+        val hit = List(3) { "preciso buscar meu caderno azul" }
+        assertNotNull(PhraseMatcher.calibratedThreshold(hit, listOf("preciso buscar meu carro azul"), p))
+        // Negativa que disparou como a frase bloqueia o ajuste.
+        assertNull(PhraseMatcher.calibratedThreshold(hit, listOf(hit[0]), p))
+    }
+
+    @Test
+    fun similarNegativeRaisesThePersonalThreshold() {
+        // Negativa que passaria no padrão (85 % >= 70 %) sobe a exigência para separar.
+        assertEquals(0.9, PhraseMatcher.personalVerify(listOf(95, 100, 96), listOf(85), 0.7)!!, 1e-9)
+        // Negativa distante não baixa a exigência abaixo do piso.
+        assertEquals(0.7, PhraseMatcher.personalVerify(listOf(90, 92, 95), listOf(30), 0.7)!!, 1e-9)
+        assertNull(PhraseMatcher.personalVerify(listOf(88, 100, 95), listOf(88), 0.7))
+        assertNull(PhraseMatcher.personalVerify(listOf(100, 100), listOf(10), 0.7))
+    }
+
+    @Test
+    fun brazilianNumbersLoseCarrierCodeAndKeepDigits() {
+        assertEquals("+5511999990000", PhoneBr.normalize("0 15 11 99999-0000"))
+        assertEquals("+5511999990000", PhoneBr.normalize("(11) 99999-0000"))
+        assertEquals("+5511999990000", PhoneBr.normalize("+55 11 99999-0000"))
+        assertEquals("+5511999990000", PhoneBr.normalize("011 99999-0000"))
+        assertEquals("+5511999990000", PhoneBr.normalize("5511999990000"))
+        assertEquals("+551133334444", PhoneBr.normalize("015 11 3333-4444"))
+        assertEquals("+5555999990000", PhoneBr.normalize("55 99999-0000"))
+        assertNull(PhoneBr.normalize("11 89999-0000"))
+        assertEquals("+5511988887777", PhoneBr.normalize("0 15 11 8888-7777"))
+        assertNull(PhoneBr.normalize("99999-0000"))
+        assertNull(PhoneBr.normalize("11 1234-5678"))
+        assertEquals("+55 (11) 99999-0000", PhoneBr.format("+5511999990000"))
+        assertTrue(AlertMessage.repeat("", null, 2, 6).startsWith("Repetindo (2/6): "))
     }
 }

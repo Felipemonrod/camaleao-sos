@@ -50,6 +50,11 @@ class Store(context: Context, databaseName: String = "records.db") :
 
     fun phrase() = get("phrase", "Preciso buscar meu caderno azul")
 
+    /** Exigência da segunda leitura ajustada na calibração (ver PhraseMatcher.personalVerify). */
+    fun verify() =
+        get("verify", "").toDoubleOrNull()?.coerceIn(br.com.camaleao.sos.sentinela.Stage1.VERIFY, 0.99)
+            ?: br.com.camaleao.sos.sentinela.Stage1.VERIFY
+
     fun threshold() = get("threshold", "1.0").toDoubleOrNull() ?: 1.0
 
     @Synchronized

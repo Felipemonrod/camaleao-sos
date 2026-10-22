@@ -104,6 +104,31 @@ class PanelTransport(private val store: Store) {
         store.put("server_public_key", response.getString("server_public_key"))
     }
 
+    /** Pede ao Painel a ligação com voz. Falso se não há Painel ou o discador está indisponível. */
+    fun call(phones: List<String>, message: String): Boolean {
+        if (store.get("endpoint").isBlank()) return false
+        val request =
+            JSONObject()
+                .put("device_id", store.deviceId())
+                .put("request_id", java.util.UUID.randomUUID().toString())
+                .put("created_at", java.time.Instant.now().toString())
+                .put("phones", org.json.JSONArray(phones))
+                .put("message", message)
+                .toString()
+        return runCatching {
+                request(
+                        store.get("endpoint"),
+                        "/api/call",
+                        store.get("pin"),
+                        JSONObject().put("request", request).put("signature", store.crypto.sign(request)),
+                        store.get("transport_token"),
+                    )
+                    .getString("call_id")
+                    .isNotBlank()
+            }
+            .getOrDefault(false)
+    }
+
     fun send(record: JSONObject) {
         val id = record.getString("id")
         val result =

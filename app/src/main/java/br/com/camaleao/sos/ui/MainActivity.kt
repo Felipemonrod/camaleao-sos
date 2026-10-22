@@ -40,9 +40,17 @@ class MainActivity : ComponentActivity() {
     internal var phase: TextView? = null
     internal var sample: TextView? = null
     internal val executor = Executors.newSingleThreadExecutor()
-    internal val positives = mutableListOf<String>()
-    internal val negatives = mutableListOf<String>()
+    internal val positives = mutableListOf<br.com.camaleao.sos.sentinela.SampleResult>()
+    internal val negatives = mutableListOf<br.com.camaleao.sos.sentinela.SampleResult>()
     internal var capturedSerial = -1
+    /** Enquanto a agenda aberta pelo próprio app está na frente, a Fachada não volta. */
+    internal var picking = false
+    internal var draftName = ""
+    internal var draftPhone = ""
+    internal var lastSample: br.com.camaleao.sos.sentinela.SampleResult? = null
+    internal var phraseSample: br.com.camaleao.sos.sentinela.PhraseSample? = null
+    internal var recordingSample = false
+    internal var analyzingSample = false
     private var lastSnapshot = ""
     internal var locator: PositionRequest? = null
     internal var pendingExport = ""
@@ -98,6 +106,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        if (picking) return super.onStop()
         LiveState.listeners.remove(updates)
         locator?.stop()
         page = "calculator"
@@ -105,6 +114,10 @@ class MainActivity : ComponentActivity() {
         LiveState.lastHeard = ""
         positives.clear()
         negatives.clear()
+        lastSample = null
+        phraseSample?.discard()
+        phraseSample = null
+        recordingSample = false
         super.onStop()
     }
 
@@ -402,8 +415,15 @@ class MainActivity : ComponentActivity() {
             toast("Habilite as notificações nas configurações do Android.")
             return
         }
-        if (!test && (!store.flag("calibrated") || !store.flag("share_consent"))) {
-            toast("Calibre a frase e autorize a comunicação antes de armar.")
+        // Diz o que falta e leva à tela certa: a autorização fica em Contatos e consentimentos.
+        if (!test && !store.flag("calibrated")) {
+            toast("Falta calibrar a frase: grave 3 positivas e 1 negativa e calcule o ajuste.")
+            navigate("calibration")
+            return
+        }
+        if (!test && !store.flag("share_consent")) {
+            toast("Falta autorizar a comunicação: marque a primeira autorização desta tela.")
+            navigate("contacts")
             return
         }
         LiveState.preparing = true
@@ -419,6 +439,7 @@ class MainActivity : ComponentActivity() {
     }
 
     internal fun stopListening() {
+        br.com.camaleao.sos.sos.OpenLineCall.stop()
         store.flag("wanted_armed", false)
         stopService(Intent(this, SentinelaService::class.java))
         LiveState.cancelCommand = true
@@ -471,6 +492,26 @@ class MainActivity : ComponentActivity() {
     @Deprecated("Compatibilidade com API 26")
     override fun onActivityResult(code: Int, result: Int, data: Intent?) {
         super.onActivityResult(code, result, data)
+        if (code == 72) picking = false
+        if (code == 72 && result == RESULT_OK)
+            data?.data?.let { uri ->
+                runCatching {
+                        contentResolver
+                            .query(
+                                uri,
+                                arrayOf(
+                                    android.provider.ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                                    android.provider.ContactsContract.CommonDataKinds.Phone.NUMBER,
+                                ),
+                                null,
+                                null,
+                                null,
+                            )
+                            ?.use { if (it.moveToFirst()) it.getString(0).orEmpty() to it.getString(1).orEmpty() else null }
+                    }
+                    .getOrNull()
+                    ?.let { (name, number) -> addContact(name, number) } ?: toast("Não foi possível ler o contato.")
+            }
         if (code == 70 && result == RESULT_OK)
             data?.data?.let { uri ->
                 runCatching {

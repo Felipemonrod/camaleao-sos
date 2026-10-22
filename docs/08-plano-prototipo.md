@@ -395,6 +395,7 @@ foi marcado como concluído por existir código.
 | Atualização do primeiro protótipo | migração verificada; limites em [docs/07](07-privacidade-lgpd.md#controles-entregues-e-limites-pendentes) |
 | Voz | Vosk PT em dois estágios; estágio 1 com iscas, junção de resultados e segunda leitura do Buffer pré-evento ([ADR 0011](../.claude/decisions/0011-estagio-1-com-iscas-e-segunda-leitura.md)); checagem de vocabulário; medição em [docs/06](06-reconhecimento-de-voz.md#ajuste-medido-do-estágio-1-e-das-palavras) |
 | Funções por voz | palavra por função com liga/desliga: alerta, localização e gravação ([ADR 0010](../.claude/decisions/0010-palavra-por-funcao-e-sms-automatico.md)) |
+| Ligação para a Rede de Apoio | código pronto, sem teste em aparelho: Painel liga com voz e, sem Painel, linha aberta no aparelho ([ADR 0012](../.claude/decisions/0012-ligacao-pelo-painel-e-linha-aberta.md)) |
 | Ciclo de vida | FGS, notificação, sinal de vida, liberação de captura e lembrete após boot |
 | Ocorrência | conteúdo cifrado, manifesto assinado/encadeado, quatro estados e auditoria |
 | Transporte | HTTPS, pareamento, fila persistente, retry e recibo verificável |

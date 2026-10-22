@@ -182,3 +182,41 @@ Tailscale. Decisões humanas registradas nos ADRs 0010 e 0011.
 carregador, instalação por terceiros (Play Protect), conteúdo do SMS e as pendências
 jurídicas adiadas. Nenhum resultado sintético foi apresentado como medição com pessoas.
 Sem atribuição de IA em commit ou PR (AGENTS.md R10).
+
+## 2026-10-22 — Ligação para a Rede de Apoio com Claude Code
+
+**Solicitação humana:** analisar por que o APK da página não enviou SMS num Xiaomi de
+um colega e avaliar localização por SMS e ligação; depois, implementar ligação com voz
+sintetizada, celular mudo e novas tentativas até alguém atender.
+
+**Trabalho realizado:** análise do bloqueio (permissão de SMS restrita para app
+instalado fora da loja no Android 15+ e camada própria de permissões do MIUI/HyperOS;
+o app falha sem registro quando a permissão falta, defeito ainda aberto). A IA contestou o desenho
+original: app comum não põe áudio dentro da chamada nem sabe se ela foi atendida. Com as
+escolhas do responsável, implementou a função de ligação (caminho pelo Painel com
+discador próprio via `adb` e voz no notebook; caminho em linha aberta no aparelho),
+testes do Painel e de domínio, e o ADR 0012.
+
+**Revisão humana necessária:** teste no S25 e num aparelho de discagem real, voz pt-BR
+no notebook, comportamento no Xiaomi e a exceção ao RF-47. Nada foi marcado como
+atendido sem teste em aparelho. Sem atribuição de IA em commit ou PR (AGENTS.md R10).
+
+## 2026-10-22 — Calibração, disparo, agenda e localização com Claude Code
+
+**Solicitação humana:** corrigir a frase nova que não armava e revisar fala, Sentinela e
+cadastro; achar a falha de localização com tela apagada; simplificar a calibração
+("como áudio de mensagem", com porcentagem); permitir disparo só com a frase; manter a
+posição ativa enquanto armada; repetir o SMS; escolher contato na agenda sem errar o
+número; fazer as ligações pararem.
+
+**Trabalho realizado:** a IA achou e corrigiu a calibração que travava, a regra do teste
+diferente do modo armado, a sessão antiga que derrubava a nova, o SMS sem permissão que
+sumia, a localização só por GPS (3 falhas em 5 → 5 aprovações em 5) e o laço de ligação
+que só parava pelo estado armado. Implementou a calibração por segurar para falar com
+limite pessoal a partir da negativa, o ADR 0013 e os testes de domínio. Os testes com voz
+real foram feitos pelo responsável e acompanhados pelo log. A IA registrou como não
+comprovado o que o log não mostrou.
+
+**Revisão humana necessária:** parada das ligações com chamada recusada, disparo só com
+a frase, bateria com posição contínua, e o APK de release num celular sem modo
+desenvolvedor.

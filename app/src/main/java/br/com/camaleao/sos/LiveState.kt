@@ -21,6 +21,8 @@ object LiveState {
     /** Tipos com que o Foreground Service subiu (ServiceInfo.FOREGROUND_SERVICE_TYPE_*). */
     @Volatile var foregroundTypes = 0
     @Volatile var location: Location? = null
+    /** Ligação em linha aberta em curso: o Android silencia o microfone e isso é esperado. */
+    @Volatile var callInProgress = false
     val main = Handler(Looper.getMainLooper())
     val listeners = linkedSetOf<() -> Unit>()
 

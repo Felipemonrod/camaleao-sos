@@ -281,3 +281,74 @@ USB e Wi-Fi; notebook Windows com Painel local; Vosk `small-pt-0.3`. Mudanças e
 **Limites desta execução:** o teste de 30 min ocorreu em silêncio e no carregador:
 não mede falso positivo em conversa nem bateria (RNF-05), e sem Doze. A frase falada
 por pessoa real ainda não foi medida. O SMS entregue não foi observado diretamente.
+
+### Execução de 22/10/2026 — ligação para a Rede de Apoio (só no PC)
+
+Mudança em [ADR 0012](../.claude/decisions/0012-ligacao-pelo-painel-e-linha-aberta.md).
+Nenhuma ligação real foi feita.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Compilação Android debug | aprovada |
+| Testes unitários | 15 aprovados (14 anteriores + `FunctionsTest.callMessagesNeverInventPosition`) |
+| Testes do Painel (Node) | 21 aprovados (8 anteriores + 13 de `server/test/call.test.mjs`): pedido sem token, alterado ou antigo recusado; sem discador responde 503; repetição devolve a mesma ligação; discador simulado liga em rodadas até atender; cancelamento pelo Painel; telefone fora de `state.bin` e da listagem; número com caractere de shell recusado |
+| Formato de `dumpsys telephony.registry` no S25 | conferido: `Foreground call state: N` por chip, lido pelo discador |
+
+**Falta no aparelho, antes de marcar RF-59 a RF-63:**
+
+- ⚠️ **Não verificado:** `AudioManager.getMode()` devolvendo `MODE_IN_CALL` para app comum no S25 (Android 16). Sem isso, o caminho A para depois da primeira ligação.
+- `TelecomManager.placeCall` com a Fachada em segundo plano e a Sentinela armada; volume de chamada no mínimo; retomada do microfone depois da chamada (RNF-14).
+- Discador real: Android de discagem no notebook, `DISCADOR=adb DISCADOR_SERIAL=<serial> npm start`, ligação atendida, não atendida e recusada; estado `1` (ACTIVE) só no atendimento.
+- Voz SAPI pt-BR no notebook audível pelo microfone do aparelho de discagem.
+- Xiaomi com `CALL_PHONE` e a permissão própria do MIUI/HyperOS.
+
+### Execução de 22/10/2026 — bateria completa no S25 após a 0.4.0
+
+Commit `10f1c6f` (correções da calibração da frase, da sessão armada e do SMS sem
+permissão, mais a função de ligação). `tools/validar.ps1 -Serial <S25>`, Painel local no PC
+via `adb reverse`. Ao fim, `pm clear` no app.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| CI do commit no GitHub (Android e Painel) | aprovado |
+| Compilação, Lint e testes unitários | aprovados; 16 testes unitários (15 anteriores + `onlyRecognizedReadingsCountAsPositive`) |
+| Testes do Painel (Node) | 21 aprovados |
+| Instrumentados no S25 (`CompleteFlowTest` + `GrammarProbeTest`) | `OK (15 tests)`: 13 aprovados e 2 ignorados por regra (alternar rede só no emulador; SMS sem número autorizado) |
+| `ScreenOffTest`, posição com tela apagada e Sentinela armada | **instável: 2 aprovações e 3 falhas em 5 execuções** (2 dentro da bateria, 3 isoladas, 1 falha isolada). A falha é `Sem posição com tela apagada e Sentinela armada` no limite de 15 s. Na execução anterior desta data, passou |
+| `ScreenOffTest`, execução longa | ignorado por regra (só roda quando pedido) |
+| `ScreenOffTest` depois da correção do `LocationProbe` | 5 aprovados em 5 |
+
+**Causa e correção da falha de posição:** com permissão fina, o `LocationProbe` pedia
+posição só ao GPS. Dentro de casa, com a tela apagada, o GPS não fixava em 15 s e o
+teste dependia de haver leitura de menos de 2 min por acaso. Na usuária, isso deixaria
+o alerta sem localização dentro de casa. Agora `fused` (API 31+), rede e GPS são
+pedidos juntos; a resposta com precisão de até 50 m encerra na hora, senão vale a melhor
+até o prazo. Depois da correção, no mesmo S25 e no mesmo cômodo: **5 aprovações em 5
+execuções** do `ScreenOffTest`, ~9 s cada. As correções da
+calibração e da sessão armada passaram só nos testes automáticos; o fluxo pela tela
+(salvar frase nova → 3 positivas → 1 negativa → calibrar → armar logo depois do teste)
+ainda não foi feito à mão.
+
+### Execução de 22/10/2026 — calibração, disparo, agenda e ligação no S25 (debug)
+
+Mudanças: [ADR 0013](../.claude/decisions/0013-disparo-so-com-frase-e-localizacao-continua.md),
+calibração por "segurar para falar" com porcentagem e limite pessoal a partir da
+negativa, `LocationProbe` com vários provedores. Tudo feito pelo responsável no S25,
+com o log `CamaleaoVoz`/`CamaleaoLigacao` acompanhado; `pm clear` ao fim.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Bateria `tools/validar.ps1` no S25 depois das mudanças | aprovada: `OK (15 tests)` (13 + 2 ignorados por regra) e `ScreenOffTest` `OK (2 tests)`; 21 do Painel; unitários e Lint aprovados |
+| Calibração "segurar para falar" | relatada pelo responsável: grava, mostra texto, % e se a Sentinela reconheceria |
+| Negativa parecida com a frase | antes travava a calibração; agora sobe o limite pessoal. Relatado como funcionando |
+| Armar sem autorização de comunicação | o app agora diz o que falta e abre a tela; depois armou |
+| Frase + palavra com voz real | 4 frases aceitas (nota 1,00), mas sem palavra de função na janela, por isso nada disparou. Depois: frase aceita (0,95) seguida de `COMANDO ligacao` |
+| Contato pela agenda | primeiro número recusado (formato da agenda); depois da regra do nono dígito e do preenchimento para correção, aceito e conferido pelo responsável |
+| Ligação em linha aberta (A), número autorizado pelo responsável | 1 chamada de 49 s, encerrada pela regra dos 40 s (provável caixa postal). **`AudioManager.getMode()` vê a chamada no S25**: o ⚠️ da execução anterior está resolvido |
+| Ligação que não parava (relato do responsável, versão anterior) | causa no código: contatos lidos uma vez e parada só pelo estado armado. Corrigido (RF-68) |
+| "Parar ligações" e excluir contato durante as tentativas | **não comprovado**: o responsável relatou que parou, mas o log do aparelho não mostra nova frase nem ligação depois das 18:23 |
+
+**Falta:** a prova de parada com chamada recusada; disparo só com a frase em voz real;
+repetição do SMS (o chip do S25 recusa SMS); bateria com posição contínua (1 h fora do
+carregador); tudo no APK de release.
+
