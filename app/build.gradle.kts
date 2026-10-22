@@ -1,13 +1,29 @@
+import java.util.Properties
+
 plugins { id("com.android.application"); id("org.jetbrains.kotlin.android") }
+
+// Assinatura de release: keystore.properties fica fora do Git. Sem ele, só o debug é gerado.
+val signing = rootProject.file("keystore.properties").takeIf { it.exists() }?.let { f ->
+    Properties().apply { f.inputStream().use(::load) }
+}
 android {
     namespace = "br.com.camaleao.sos"
     compileSdk = 36
     defaultConfig {
         applicationId = "br.com.camaleao.sos"
-        minSdk = 26; targetSdk = 36; versionCode = 2; versionName = "0.2.0"
+        minSdk = 26; targetSdk = 36; versionCode = 3; versionName = "0.3.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
     }
+    signingConfigs {
+        if (signing != null) create("release") {
+            storeFile = file(signing.getProperty("storeFile"))
+            storePassword = signing.getProperty("storePassword")
+            keyAlias = signing.getProperty("keyAlias")
+            keyPassword = signing.getProperty("keyPassword")
+        }
+    }
+    buildTypes { release { signingConfig = signingConfigs.findByName("release") } }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
     androidResources { noCompress += listOf("mdl", "fst") }
