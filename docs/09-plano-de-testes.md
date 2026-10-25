@@ -552,3 +552,31 @@ voltar a acontecer, o log diz qual dos dois é.
 **Observação de ambiente:** o `ScreenOffTest` deixa o aparelho bloqueado e o bloqueio é
 seguro. Rodar a suíte principal logo depois faz o teste da Activity falhar com
 `Activity never becomes requested state "[RESUMED]"` — é a tela travada, não defeito.
+
+### Execução de 25/10/2026 (final) — bateria completa depois da correção
+
+`tools/validar.ps1 -Serial <S25>` no Galaxy S25, APK debug do commit `bff970d`, Painel
+local pelo cabo. Execução única, sem falha.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Compilação debug, Lint, testes unitários | aprovados; 26 unitários |
+| Testes do Painel (Node) | 21 aprovados, 0 falhas |
+| Instrumentados (`CompleteFlowTest` + `GrammarProbeTest`) | `OK (17 tests)` em 45,8 s |
+| `ScreenOffTest` | `OK (2 tests)` em 9,5 s |
+| Caminho do RF-69, conferido no log | `COMANDO alerta na mesma fala` — a releitura disparou sem abrir a janela |
+| Releitura nos casos negativos | `sem comando depois da frase`, 5 palavras na frase sozinha e 7 na amostra com a palavra **antes** da frase |
+| `frase não localizada` na releitura | **nenhuma ocorrência**: a gramática combinada achou a frase em todas as vezes |
+| Gravação com tela apagada | `start(manual): preroll=8s` seguido de `stop(parada pela usuária)` no mesmo id |
+
+O pré-rolo do RF-70 aparece pela primeira vez medido no aparelho: `preroll=8s` no
+registro da gravação iniciada com a tela apagada, e o `exportWav` do próprio teste
+conferiu o arquivo por hash depois disso.
+
+**Permanece em aberto:** a falha única do RF-69 de mais cedo nesta data não reproduziu
+em nenhuma das 10 execuções seguintes. A instrumentação da releitura fica no lugar.
+
+**Permanece sem teste:** o diagnóstico de compatibilidade do RF-72 numa tela real; o
+efeito da janela de 30 s sobre falso alarme; o `gap_s` numa ligação real; e tudo isto em
+APK de release — a chave de assinatura não está neste notebook, então a página pública
+continua entregando a 0.5.0.
