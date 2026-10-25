@@ -18,6 +18,8 @@ object LiveState {
     @Volatile var recordRequest = false
     @Volatile var stopRecording = false
     @Volatile var lastCommand = ""
+    /** Espera da janela de comando da sessão armada, para a tela não prometer outro número. */
+    @Volatile var commandWindowS = 30
     /** Tipos com que o Foreground Service subiu (ServiceInfo.FOREGROUND_SERVICE_TYPE_*). */
     @Volatile var foregroundTypes = 0
     @Volatile var location: Location? = null

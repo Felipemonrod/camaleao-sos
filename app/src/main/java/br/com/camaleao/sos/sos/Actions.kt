@@ -28,6 +28,10 @@ object Actions {
 
     fun recordMinutes(store: Store) = store.get("record_minutes", "5").toIntOrNull()?.coerceIn(1, 30) ?: 5
 
+    /** Espera da janela de comando em segundos, escolhida pela usuária (ADR 0015). */
+    fun commandWindowS(store: Store) =
+        store.get("command_window_s", "30").toIntOrNull()?.coerceIn(5, 60) ?: 30
+
     fun locationUpdates(store: Store) =
         store.get("location_updates", "3").toIntOrNull()?.coerceIn(0, 12) ?: 3
 

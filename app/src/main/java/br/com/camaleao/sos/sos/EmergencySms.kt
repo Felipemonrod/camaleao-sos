@@ -41,6 +41,14 @@ object EmergencySms {
                     reason,
                     "Rede de Apoio",
                     if (!store.flag("share_consent")) "FALHOU: comunicação não autorizada"
+                    else if (
+                        !context.packageManager.hasSystemFeature(
+                            android.content.pm.PackageManager.FEATURE_TELEPHONY
+                        )
+                    )
+                        "FALHOU: este aparelho não tem telefonia"
+                    else if (Compatibility.sideloaded(context))
+                        "FALHOU: permissão de SMS bloqueada — veja Compatibilidade"
                     else "FALHOU: sem permissão de SMS (veja Configurações do app)",
                 )
             return 0

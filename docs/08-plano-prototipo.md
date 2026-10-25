@@ -142,7 +142,7 @@ Entregável: app Android nativo mínimo, um botão, log na tela.
 | 1.2 | Integrar Vosk via Maven — **versão fixa, não `0.3.32+`** (CR-14) — e carregar o modelo pt-BR do diretório interno do app | RF-22 |
 | 1.3 | `AudioCaptureEngine` único: `AudioRecord` 16 kHz / mono / PCM16 | RF-29 |
 | 1.4 | Estágio 1 (`WAITING_KEYWORD`): gramática com a frase + `[unk]` | RF-34 |
-| 1.5 | Estágio 2 (`COMMAND_WINDOW`): gramática de comandos, janela de 4–6 s, timeout sem ação | RF-35, RF-36 |
+| 1.5 | Estágio 2 (`COMMAND_WINDOW`): gramática de comandos, janela ajustável (RF-73), timeout sem ação | RF-35, RF-36 |
 | 1.6 | Normalização + PhraseMatcher com limiar | RF-14 |
 | 1.7 | Medir: 50–100 positivos, hard negatives, 2 h de background contínuo | RNF-03, RNF-04 |
 | 1.8 | Baseline whisper.cpp `tiny` sobre as **mesmas** gravações | — |

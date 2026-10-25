@@ -50,7 +50,7 @@ completa · **P2** = desejável · **P3** = pós-protótipo.
 |---|---|---|
 | RF-33 | O pipeline tem três estados: `WAITING_KEYWORD`, `COMMAND_WINDOW`, `SOS_EVENT`. | P0 |
 | RF-34 | Em `WAITING_KEYWORD`, só o estágio KWS recebe áudio. | P0 |
-| RF-35 | Detectada a frase, abre-se uma `COMMAND_WINDOW` de 4 a 6 s com gramática restrita de comandos. | P1 |
+| RF-35 | Detectada a frase, abre-se uma `COMMAND_WINDOW` com gramática restrita de comandos. A faixa original de 4 a 6 s foi substituída pelo ajuste do RF-73. | P1 |
 | RF-36 | Timeout ou comando ambíguo **não executa ação**: registra métrica e volta a `WAITING_KEYWORD`. | P0 |
 | RF-37 | A frase pode ser **trocada** pela usuária, com recalibração, sem reinstalar o app. Ver ADR 0007. | P1 |
 | RF-38 | O comando de cancelamento, se existir, **nunca** é a Frase de Segurança. | P0 |
@@ -104,6 +104,9 @@ completa · **P2** = desejável · **P3** = pós-protótipo.
 | RF-69 | A função dita na mesma fala da Frase de Segurança é acionada sem pausa: aceita a frase, o Buffer pré-evento é relido uma vez com gramática combinada, e a palavra só vale se aparecer contígua e **depois** da frase. Sem ela, a `COMMAND_WINDOW` abre como antes. Ver [ADR 0014](../.claude/decisions/0014-funcao-na-mesma-fala-e-gravacao-honesta.md). | P1 |
 | RF-70 | A gravação de evidência começa pelo Buffer pré-evento, e o registro informa em `preroll_s` quantos segundos vieram de antes do disparo. | P1 |
 | RF-71 | A gravação nunca fabrica amostras para tapar o tempo em que o microfone esteve com outro uso: o prazo corre mesmo sem captura e o registro informa o corte em `gap_s`. | P0 |
+| RF-72 | O app mostra, no próprio aparelho, um diagnóstico de microfone, SMS, ligação, localização, notificação e economia de bateria, distinguindo permissão faltando, permissão bloqueada por configuração restrita e recurso inexistente no aparelho — e, no que falta, diz o que fazer. Ver [ADR 0015](../.claude/decisions/0015-janela-escolhida-e-compatibilidade-de-aparelho.md). | P1 |
+| RF-73 | A espera da `COMMAND_WINDOW` é escolhida pela usuária, de 5 a 60 s, padrão 30 s. As telas citam o valor em uso, nunca um fixo. Substitui a faixa de 4 a 6 s do RF-35. | P1 |
+| RF-74 | A duração da gravação de evidência é escolhida pela usuária (1 a 30 min) e a parada manual vale mesmo quando o microfone está com outro uso. | P1 |
 
 ## Requisitos não funcionais
 

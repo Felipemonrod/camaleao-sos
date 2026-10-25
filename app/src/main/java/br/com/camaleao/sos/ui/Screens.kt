@@ -143,7 +143,7 @@ internal fun MainActivity.phrase() {
         gap(this, 8)
         addView(
             text(
-                "Após a frase, diga a palavra de uma função ligada em até $VOICE_WINDOW_S segundos: " +
+                "Após a frase, diga a palavra de uma função ligada em até ${Actions.commandWindowS(store)} segundos, ou as duas na mesma fala: " +
                     Actions.commands(store).filter { it.enabled }.joinToString { "“${it.words}”" } +
                     ". Timeout ou outra fala volta à espera sem agir. O sherpa-onnx é a arquitetura alvo; não há modelo KWS PT validado incluído.",
                 14,

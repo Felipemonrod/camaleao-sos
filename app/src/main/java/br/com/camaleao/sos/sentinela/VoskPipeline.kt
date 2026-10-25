@@ -37,13 +37,15 @@ class VoskPipeline(
     private val verify: Double = Stage1.VERIFY,
     /** Modo escolhido pela usuária: a frase sozinha aciona todas as funções ligadas. */
     private val phraseFires: Boolean = false,
+    /** Espera da janela de comando, escolhida pela usuária (ADR 0015). */
+    windowMs: Long = VoiceFlow.WINDOW_MS,
 ) : AutoCloseable {
     init {
         LibVosk.setLogLevel(LogLevel.WARNINGS)
     }
 
     private val model = Model(directory.absolutePath)
-    private val flow = VoiceFlow(phrase, threshold, commands)
+    private val flow = VoiceFlow(phrase, threshold, commands, windowMs)
     private val target = PhraseMatcher.words(phrase)
     private val recognizer = Recognizer(model, 16000f, keywordGrammar()).apply { setWords(true) }
     // Segunda leitura: vocabulário aberto sobre o Buffer pré-evento, só após acerto da gramática.

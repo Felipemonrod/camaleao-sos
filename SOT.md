@@ -88,6 +88,7 @@ fechada nos documentos acima** — aponte para o ADR.
 | [0012](.claude/decisions/0012-ligacao-pelo-painel-e-linha-aberta.md) | Ligação pelo Painel com voz e, sem Painel, linha aberta no aparelho | aceito, condicionado ao teste no S25 e no aparelho de discagem |
 | [0013](.claude/decisions/0013-disparo-so-com-frase-e-localizacao-continua.md) | Disparo só com a frase, localização contínua armada e alerta repetido | aceito, condicionado à medição de bateria e falso alarme |
 | [0014](.claude/decisions/0014-funcao-na-mesma-fala-e-gravacao-honesta.md) | Função dita na mesma fala e gravação que não inventa áudio | aceito, condicionado a teste em aparelho |
+| [0015](.claude/decisions/0015-janela-escolhida-e-compatibilidade-de-aparelho.md) | Janela de comando escolhida pela usuária e diagnóstico de compatibilidade | aceito, condicionado a teste em aparelho de terceiro |
 
 **Anotações cronológicas** do dia a dia vão em [`.claude/NOTES.md`](.claude/NOTES.md).
 

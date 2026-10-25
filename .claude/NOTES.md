@@ -396,3 +396,45 @@ multipart chega perto de um minuto de áudio; MMS caberia, mas exige dados móve
 e ser o app de SMS padrão, e o chip do S25 já recusa SMS comum. O caminho que o projeto
 já tem para isso é subir a evidência ao Painel pelo transporte HTTPS com fila e recibo
 (RF-43, RF-45). Isso é decisão nova e mexe com J1 e com o docs/07: não foi feito.
+
+## 2026-10-25 (tarde) — o log desmentiu a boa notícia, e isso foi útil
+
+O responsável testou com a própria voz e relatou que funcionou perfeitamente. Funcionou
+mesmo: cinco frases aceitas com `nota=1.00` e os comandos `ligacao`, `alerta` e
+`gravacao` disparados. Mas o log não tem **nenhuma** linha `na mesma fala`: os cinco
+disparos saíram pela `COMMAND_WINDOW`. O RF-69 continua provado só com amostra
+sintética.
+
+Os intervalos entre a frase aceita e o comando, medidos no log: 2,0 s · 2,9 s · 2,7 s ·
+4,1 s · 2,5 s. Com janela de 6 s, quem hesita perde. É o dado que motivou o
+[ADR 0015](decisions/0015-janela-escolhida-e-compatibilidade-de-aparelho.md), e o pedido
+do responsável por 30 s tinha razão de ser.
+
+**Achado bom no mesmo log:** `parada: armada=true pedido=true` depois de duas chamadas
+de 15 s e 10 s. O botão "Parar ligações" para as rodadas com a Sentinela ainda armada —
+o RF-68 saiu da lista de não comprovados nessa parte. O log não distingue recusa de não
+atendimento, então a prova específica com chamada recusada continua pendente.
+
+### O que entrou
+
+Janela de comando virou ajuste da usuária (5 a 60 s, padrão 30 s) e as telas passaram a
+citar o valor em uso em vez de um `6` fixo. A duração da gravação já era ajuste e virou
+requisito (RF-74). "Parar gravação" passou a valer com o microfone na chamada — era o
+mesmo defeito do prazo, no mesmo ponto do laço.
+
+`Compatibility.kt`: diagnóstico no aparelho que separa permissão negada, permissão
+**bloqueada por configuração restrita** (instalação fora da loja, Android 13+) e recurso
+que o aparelho não tem. É o que faltava para o colega do Motorola entender por que o SMS
+não saía — e o registro de falha do `EmergencySms` agora diz qual dos três é.
+
+### Custo declarado, não escondido
+
+A janela de 30 s multiplica por cinco a janela em que uma palavra de função é aceita
+depois de um reconhecimento correto da frase. A medição de falso alarme com a janela
+longa **não foi feita**, e é o que condiciona o status do ADR 0015.
+
+### Pendente
+
+O S25 foi desconectado antes de rodar a bateria instrumentada com estas mudanças. A
+página do `gh-pages` foi reescrita (menos cara de texto gerado, mais seção de problemas
+de permissão de SMS/ligação) mas **não foi publicada** — espera o aval do responsável.

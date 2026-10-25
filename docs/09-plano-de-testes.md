@@ -433,3 +433,48 @@ Continua **não verificado**:
 - o `gap_s` durante uma ligação real;
 - tudo isso em APK de **release**: a chave de assinatura não está neste notebook, então
   a 0.5.0 publicada na página **não contém** nada deste ADR.
+
+### Execução de 25/10/2026 (tarde) — voz real do responsável, lida no log
+
+Teste conduzido pelo responsável no S25 com o APK debug; o log `CamaleaoVoz` e
+`CamaleaoLigacao` foi lido do aparelho ao fim. O responsável relatou que "funcionou
+perfeitamente". O log confirma os disparos **e** mostra por qual caminho eles saíram.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Frase reconhecida em voz real | 5 aceitações, todas com `nota=1.00` |
+| Disparo das funções por voz real | `COMANDO ligacao`, `COMANDO alerta` e `COMANDO gravacao` (3×) |
+| **Caminho usado** | **todos pela `COMMAND_WINDOW`**: nenhuma linha `na mesma fala` no log |
+| Intervalo medido entre a frase aceita e o comando | 2,0 s · 2,9 s · 2,7 s · 4,1 s · 2,5 s |
+| **RF-68 — "Parar ligações"** | **comprovado**: `parada: armada=true pedido=true`, com a Sentinela ainda armada. Duas chamadas antes disso, de 15 s e 10 s, registradas como sem resposta |
+| Falso positivo em fala comum | 24 linhas `fala sem a frase` no mesmo período, nenhuma virou disparo |
+
+**O que o log corrige no entendimento anterior.** O RF-69 **não** foi exercitado em voz
+humana: o responsável fala a frase e espera, e os cinco disparos vieram pela janela. A
+prova do RF-69 segue sendo a de amostra sintética, mais cedo nesta data. O que a voz
+real provou é o caminho antigo, e a medição dos intervalos — entre 2,0 s e 4,1 s, com
+uma janela de 6 s — é o que motivou o [ADR 0015](../.claude/decisions/0015-janela-escolhida-e-compatibilidade-de-aparelho.md).
+
+As duas chamadas de 15 s e 10 s encerradas antes dos 40 s aparecem no log como sem
+resposta. O log **não** distingue recusa pelo destinatário de não atendimento, então a
+prova específica de "parada com chamada recusada" continua pendente; a prova de que o
+botão para as rodadas, essa sim, está feita.
+
+### Execução de 25/10/2026 (tarde) — janela ajustável e compatibilidade, só no PC
+
+Mudanças do ADR 0015: RF-72 (diagnóstico de compatibilidade), RF-73 (janela escolhida
+pela usuária, padrão 30 s) e RF-74 (duração da gravação e parada manual). **Sem
+aparelho**: o S25 foi desconectado antes desta etapa.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Compilação debug e Lint | aprovados |
+| Testes unitários | **26 aprovados, 0 falhas** (25 anteriores + a janela ajustável) |
+| Janela de 30 s aceita comando aos 25 s | aprovado |
+| Janela de 6 s recusa o mesmo comando aos 25 s | aprovado, devolve `timeout` |
+| `DomainTest.keywordAloneDoesNotDispatchAndTimeoutIsSafe` | ajustado: usava o `6000` fixo e passou a usar a janela em vigor |
+
+**Não verificado nesta etapa:** o diagnóstico de compatibilidade numa tela real, em
+Motorola ou Xiaomi; o efeito da janela de 30 s sobre falso alarme (⚠️ é o custo
+declarado no ADR 0015 e a medição que falta); a parada da gravação durante uma ligação
+real.

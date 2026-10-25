@@ -11,6 +11,8 @@ class VoiceFlow(
     private val threshold: Double,
     private val commands: List<VoiceCommand> =
         listOf(VoiceCommand(VoiceAction.ALERT, VoiceAction.ALERT.defaultWords, true)),
+    /** Quanto a janela de comando espera. A usuária escolhe; ver ADR 0015. */
+    private val windowMs: Long = WINDOW_MS,
 ) {
     var phase = VoicePhase.WAITING_KEYWORD
         private set
@@ -27,7 +29,7 @@ class VoiceFlow(
     fun open(now: Long): Boolean {
         if (phase != VoicePhase.WAITING_KEYWORD) return false
         phase = VoicePhase.COMMAND_WINDOW
-        deadline = now + WINDOW_MS
+        deadline = now + windowMs
         return true
     }
 
@@ -63,6 +65,7 @@ class VoiceFlow(
     }
 
     companion object {
-        const val WINDOW_MS = 6000L
+        /** Padrão da janela de comando: 30 s, medido com voz real em 25/10 (ADR 0015). */
+        const val WINDOW_MS = 30_000L
     }
 }

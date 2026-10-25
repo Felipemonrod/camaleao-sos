@@ -124,6 +124,7 @@ class SentinelaService : Service() {
                         (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0,
                     verify = store.verify(),
                     phraseFires = store.flag("phrase_fires"),
+                    windowMs = Actions.commandWindowS(store) * 1000L,
                 )
             if (!running.get()) return
             if (
@@ -181,6 +182,7 @@ class SentinelaService : Service() {
             if (!test) LiveState.main.post { LocationProbe.track(this, store) }
             LiveState.active = true
             LiveState.preparing = false
+            LiveState.commandWindowS = Actions.commandWindowS(store)
             LiveState.voicePhase = "WAITING_KEYWORD"
             LiveState.status =
                 if (test) "Teste de frase — nenhum Protocolo SOS" else "Armada — microfone ativo"
@@ -199,6 +201,11 @@ class SentinelaService : Service() {
                 val elapsed = SystemClock.elapsedRealtime()
                 // O prazo da gravação corre mesmo sem captura (RF-71).
                 evidence.tick(elapsed)
+                // Parar vale mesmo sem captura: senão o botão não responde durante a ligação.
+                if (LiveState.stopRecording) {
+                    LiveState.stopRecording = false
+                    evidence.stop("parada pela usuária")
+                }
                 // Durante a ligação em linha aberta o microfone é da chamada: espera voltar.
                 if (count <= 0 && LiveState.callInProgress) {
                     SystemClock.sleep(200)
@@ -218,10 +225,6 @@ class SentinelaService : Service() {
                             elapsed,
                             engine?.snapshot(),
                         )
-                }
-                if (LiveState.stopRecording) {
-                    LiveState.stopRecording = false
-                    evidence.stop("parada pela usuária")
                 }
                 // O mesmo bloco vai para a gravação e para o reconhecimento (RF-29).
                 evidence.accept(pcm, count, elapsed)

@@ -18,7 +18,7 @@ import br.com.camaleao.sos.sos.EmergencySms
 internal fun MainActivity.functions() {
     heading(
         "Palavras e funções.",
-        "Depois da Frase de Segurança há ${VOICE_WINDOW_S} segundos para dizer a palavra de uma função. Só funções ligadas são ouvidas.",
+        "Depois da Frase de Segurança há ${Actions.commandWindowS(store)} segundos para dizer a palavra de uma função — ou diga as duas numa tirada só. Só funções ligadas são ouvidas.",
     )
     val toggles = mutableMapOf<VoiceAction, CheckBox>()
     val fields = mutableMapOf<VoiceAction, EditText>()
@@ -50,7 +50,7 @@ internal fun MainActivity.functions() {
         addView(text("Como disparar", 18, ink, true))
         addView(
             text(
-                "Frase + palavra: diga a Frase de Segurança e, em até ${VOICE_WINDOW_S} s, a palavra da função (ex.: “enviar alerta”). Mais seguro contra falso alarme.\n" +
+                "Frase + palavra: diga a Frase de Segurança e, em até ${Actions.commandWindowS(store)} s, a palavra da função (ex.: “enviar alerta”). Dizer as duas na mesma fala também funciona, sem esperar. Mais seguro contra falso alarme.\n" +
                     "Só a frase: a Frase de Segurança sozinha aciona todas as funções ligadas de uma vez. Mais simples, mas um falso reconhecimento já envia SMS e liga.",
                 13,
                 muted,
@@ -63,6 +63,7 @@ internal fun MainActivity.functions() {
     body.addView(text("Mensagem do SMS de alerta", 15, ink, true))
     val message = input("Mensagem", store.get("sms_text", AlertMessage.DEFAULT), multiline = true)
     val minutes = input("Minutos de gravação · 1 a 30", Actions.recordMinutes(store).toString())
+    val window = input("Segundos para dizer a palavra da função · 5 a 60", Actions.commandWindowS(store).toString())
     val updates = input("Atualizações de localização a cada 5 min · 0 a 12", Actions.locationUpdates(store).toString())
     body.addView(
         text(
@@ -88,7 +89,7 @@ internal fun MainActivity.functions() {
             toast("Ligue pelo menos uma função.")
             return@button
         }
-        withVocabulary(next.filter { it.enabled }.map { it.words }) { saveFunctions(next, message.text.toString(), minutes.text.toString(), updates.text.toString()) }
+        withVocabulary(next.filter { it.enabled }.map { it.words }) { saveFunctions(next, message.text.toString(), minutes.text.toString(), updates.text.toString(), window.text.toString()) }
     }
     button("Voltar à Sentinela", secondary = true) { navigate("home") }
 }
@@ -109,7 +110,7 @@ internal fun MainActivity.withVocabulary(texts: List<String>, then: () -> Unit) 
     }
 }
 
-private fun MainActivity.saveFunctions(next: List<VoiceCommand>, message: String, minutes: String, updates: String) {
+private fun MainActivity.saveFunctions(next: List<VoiceCommand>, message: String, minutes: String, updates: String, window: String) {
     next.forEach {
         store.put("cmd_${it.action.key}_words", it.words)
         store.put("cmd_${it.action.key}_on", it.enabled.toString())
@@ -117,6 +118,7 @@ private fun MainActivity.saveFunctions(next: List<VoiceCommand>, message: String
     store.put("sms_text", message.trim().take(160))
     store.put("record_minutes", (minutes.toIntOrNull() ?: 5).coerceIn(1, 30).toString())
     store.put("location_updates", (updates.toIntOrNull() ?: 3).coerceIn(0, 12).toString())
+    store.put("command_window_s", (window.toIntOrNull() ?: 30).coerceIn(5, 60).toString())
     val needed = mutableListOf<String>()
     if (next.any { it.enabled && it.action != VoiceAction.RECORD })
         needed += Manifest.permission.SEND_SMS
@@ -204,4 +206,4 @@ internal fun MainActivity.evidenceAndSms() {
     }
 }
 
-internal const val VOICE_WINDOW_S = 6
+// A espera da janela de comando é escolhida pela usuária: Actions.commandWindowS(store).

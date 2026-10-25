@@ -279,3 +279,34 @@ notebook, o APK 0.5.0 da página não contém nenhuma das melhorias destes dois 
 da terceira leitura com a Sentinela armada, o pré-rolo num arquivo exportado, o `gap_s`
 numa ligação real, e a geração da 0.6.0 no PC que tem a chave. Sem atribuição de IA em
 commit ou PR (AGENTS.md R10).
+
+## 2026-10-25 (tarde) — Janela ajustável e compatibilidade com Claude Code
+
+**Solicitação humana:** o responsável testou com a própria voz, relatou sucesso, e pediu
+quatro coisas: aumentar a janela de comando de 6 para 30 s, reescrever a página pública
+com menos cara de texto gerado por IA, melhorar a compatibilidade com outros aparelhos
+(um colega não conseguiu habilitar SMS num Motorola) e deixar a duração da gravação a
+cargo do usuário.
+
+**Trabalho realizado:** antes de aceitar o relato, a IA leu o log do aparelho e
+encontrou algo que o responsável não tinha notado: os cinco disparos saíram pela janela
+de comando, e **nenhum** pela releitura do ADR 0014 — o RF-69 segue provado só com
+amostra sintética. Os intervalos medidos no log (2,0 a 4,1 s) confirmaram, com número, o
+motivo do pedido de uma janela maior. O mesmo log trouxe evidência de uma pendência
+antiga: o botão "Parar ligações" parou as rodadas com a Sentinela armada.
+
+A IA tornou a janela um ajuste da usuária (5 a 60 s, padrão 30 s) em vez de trocar uma
+constante por outra, e fez as telas citarem o valor em uso. Escreveu o `Compatibility.kt`,
+que separa permissão negada, permissão bloqueada por configuração restrita e recurso
+inexistente no aparelho — a causa provável do caso do Motorola. Corrigiu a parada da
+gravação, que não respondia com o microfone na chamada. Reescreveu a página pública com
+uma seção específica sobre destravar SMS e ligação.
+
+A IA declarou o custo em vez de omiti-lo: a janela de 30 s multiplica por cinco o tempo
+em que uma palavra de função é aceita, e a medição de falso alarme com a janela longa
+não foi feita. É o que condiciona o status do ADR 0015.
+
+**Revisão humana necessária:** bateria instrumentada com estas mudanças (o aparelho foi
+desconectado antes), o diagnóstico numa tela de Motorola ou Xiaomi, o efeito da janela
+longa sobre falso alarme, e a publicação da página, que não foi feita sem aval. Sem
+atribuição de IA em commit ou PR (AGENTS.md R10).

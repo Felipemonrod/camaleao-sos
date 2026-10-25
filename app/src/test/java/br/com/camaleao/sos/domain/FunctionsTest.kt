@@ -109,6 +109,20 @@ class FunctionsTest {
         assertTrue(AlertMessage.repeat("", null, 2, 6).startsWith("Repetindo (2/6): "))
     }
 
+    /** RF-73: a espera da janela de comando é escolhida pela usuária. */
+    @Test
+    fun theCommandWindowLengthIsChosenByTheUser() {
+        val long = VoiceFlow(phrase, 0.9, cmds(), 30_000L)
+        assertTrue(long.open(0))
+        assertEquals(VoiceAction.ALERT.key, long.command("enviar alerta", 25_000))
+
+        val short = VoiceFlow(phrase, 0.9, cmds(), 6_000L)
+        assertTrue(short.open(0))
+        assertEquals("timeout", short.command("enviar alerta", 25_000))
+
+        assertEquals(30_000L, VoiceFlow.WINDOW_MS)
+    }
+
     // RF-69 — função dita na mesma fala da frase.
 
     private val target = PhraseMatcher.words(phrase)
