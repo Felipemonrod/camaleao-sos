@@ -570,3 +570,40 @@ sessão destruíram a possibilidade de reconstruir aquele episódio.
 
 Prazo de 30 s e botão novo não foram vistos em tela. Play Protect e configuração restrita
 seguem sem teste: o APK foi instalado por `adb`, o que isenta o app dos dois.
+
+## 2026-10-25 (fim) — era saldo. A linha pré-paga estava zerada
+
+O SMS do Redmi para o **próprio número** falhou igual. A caixa de entrada do aparelho
+tinha a resposta: duas mensagens da Claro avisando que o saldo do pré-pago acabou.
+Enviar SMS é cobrado, receber não — daí o aparelho receber 2509 mensagens, navegar,
+ligar e não conseguir enviar nada. Detalhes em
+[docs/09](../docs/09-plano-de-testes.md#registro-de-execução).
+
+Isso explica as 20 mensagens de 23/10 (havia saldo), o `SMS_FAIL_RETRY` com
+`mErrorCode = -1` (recusa de tarifação, não erro técnico) e as 101 falhas da telemetria
+da Xiaomi.
+
+### As cinco hipóteses erradas
+
+Chip recusado pela operadora, `createForSubscriptionId` da 0.6.1, permissão do MIUI,
+bloqueio silencioso do fabricante, IMS sem registrar. **Todas erradas.** Três foram
+anunciadas como conclusão antes de haver evidência, e cada uma custou uma rodada de
+teste ao responsável — que, por três vezes, disse que não fazia sentido funcionar numa
+versão e parar na outra. Estava certo nas três.
+
+O que funcionou foram as ideias dele: escrever uma sonda isolada, mandar só um "oi" (que
+trouxe o primeiro código de erro real) e desconfiar da operadora.
+
+**A regra que eu devia ter seguido:** antes de culpar o código, perguntar o que o
+aparelho já está dizendo. A resposta estava na caixa de entrada desde o começo.
+
+### O que o projeto ganhou
+
+Nada disto era defeito do Camaleão, mas o episódio achou um problema real de produto: num
+aparelho sem saldo o app mostrava "enviado" e deixava o registro em `PENDENTE` para
+sempre. O ADR 0016 corrige — silêncio vira falha em 30 s e o envio manual sobe para
+primeiro plano —, o `reason()` passa a traduzir os códigos do rádio, e `tools/sms-probe/`
+fica para o próximo aparelho.
+
+Ao fim, com autorização do responsável, o Cálculos e a sonda foram desinstalados do
+celular do amigo. Nada ficou no aparelho dele.
