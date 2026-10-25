@@ -109,6 +109,17 @@ class FunctionsTest {
         assertTrue(AlertMessage.repeat("", null, 2, 6).startsWith("Repetindo (2/6): "))
     }
 
+    /**
+     * RF-75: silêncio do sistema vira falha visível. A tela de Ocorrências decide mostrar
+     * o caminho manual olhando o prefixo "FALHOU", então os dois lados precisam combinar.
+     */
+    @Test
+    fun systemSilenceBecomesAVisibleFailure() {
+        assertTrue(br.com.camaleao.sos.sos.EmergencySms.NO_RESULT.startsWith("FALHOU"))
+        assertEquals("PENDENTE", br.com.camaleao.sos.sos.EmergencySms.PENDING)
+        assertTrue(br.com.camaleao.sos.sos.EmergencySms.NO_RESULT_MS in 10_000..60_000)
+    }
+
     /** RF-73: a espera da janela de comando é escolhida pela usuária. */
     @Test
     fun theCommandWindowLengthIsChosenByTheUser() {

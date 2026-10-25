@@ -520,3 +520,53 @@ o mesmo da 0.5.0. A 0.6.1 escolhe o chip explicitamente (SMS → voz → dados),
 motivo da falha e aponta a permissão do MIUI na Compatibilidade. Próximo passo no Redmi:
 conferir Outras permissões → Enviar SMS = Permitir e ler a linha FALHOU em Ocorrências.
 
+
+## 2026-10-25 (noite) — o SMS que o aparelho engole, e a sonda que achou isso
+
+Redmi Note 12 de um amigo, HyperOS OS2.0 / Android 15, um chip. Nenhum SMS automático
+saía; ligação e envio manual funcionavam. Detalhes e números em
+[docs/09](../docs/09-plano-de-testes.md#registro-de-execução);
+decisão no [ADR 0016](decisions/0016-silencio-do-sistema-e-plano-b-de-sms.md).
+
+### O que resolveu
+
+`tools/sms-probe/`: 60 linhas, sem nada do Camaleão, que só chamam `sendTextMessage`.
+Resultado, três vezes: a chamada retorna, o appop é contabilizado como `allow`, e **nada
+acontece** — sem resultado no `sentIntent`, sem linha na pilha, sem entrega.
+
+Isso tirou o nosso código da lista de suspeitos em dez minutos. Antes disso eu gastei
+horas pilotando a interface pelo `adb`, e o app — corretamente — voltava para a Fachada
+sempre que perdia o foco, me trancando para fora a cada tentativa.
+
+**A lição:** quando a pergunta é "este aparelho permite X?", escrever um programa que só
+faz X é mais barato que inferir pela interface do produto.
+
+### Hipóteses que eu levantei e que estavam erradas
+
+Três, todas descartadas por evidência depois de eu já tê-las anunciado:
+
+1. **Chip/operadora** — era o caso do S25, não deste aparelho. Estiquei a conclusão.
+2. **`createForSubscriptionId` da 0.6.1** — caiu quando a 0.5.0 falhou igual.
+3. **Permissão do MIUI** — o responsável confirmou "Permitido", e a sonda falhou mesmo
+   com o appop em `allow`.
+
+Também li datas erradas numa consulta à pilha de SMS e anunciei como "de hoje" mensagens
+de 23/10, o que mandou a investigação para o lado errado por duas rodadas.
+
+### O que foi entregue
+
+Silêncio vira falha (30 s sem resposta → `FALHOU` legível) e o caminho manual sobe para
+primeiro plano na Ocorrência quando o automático falha. A promessa do produto encolhe de
+propósito: "sai sozinho, e quando o aparelho não deixar, você envia em um toque".
+
+### Comparação entre versões
+
+0.3.0, 0.4.0, 0.5.0 e 0.6.0 têm o envio **byte a byte idêntico**; só a 0.6.1 acrescenta a
+escolha de chip. A versão antiga que o responsável lembrava de funcionar não era
+diferente no código — o que mudou foi o estado do aparelho, e as reinstalações desta
+sessão destruíram a possibilidade de reconstruir aquele episódio.
+
+### Pendente
+
+Prazo de 30 s e botão novo não foram vistos em tela. Play Protect e configuração restrita
+seguem sem teste: o APK foi instalado por `adb`, o que isenta o app dos dois.

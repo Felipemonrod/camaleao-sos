@@ -56,9 +56,10 @@ object EmergencySms {
         }
         val sms = manager(context)
         var started = 0
+        val waiting = mutableListOf<String>()
         for (c in contacts(store)) {
             val id = UUID.randomUUID().toString()
-            log(store, id, reason, c.getString("name"), "PENDENTE")
+            log(store, id, reason, c.getString("name"), PENDING)
             try {
                 val parts = sms.divideMessage(text)
                 val sent =
@@ -73,14 +74,47 @@ object EmergencySms {
                         }
                     )
                 sms.sendMultipartTextMessage(c.getString("phone"), null, parts, sent, null)
+                waiting += id
                 started++
             } catch (e: Exception) {
                 update(store, id, "FALHOU: ${e.javaClass.simpleName}")
             }
         }
+        // Há aparelho que aceita a chamada, contabiliza a permissão e engole a mensagem
+        // sem devolver resultado nenhum. Sem este prazo o registro fica PENDENTE para
+        // sempre, e PENDENTE eterno se parece com sucesso (RF-57).
+        if (waiting.isNotEmpty())
+            LiveState.main.postDelayed({ expirePending(store, waiting) }, NO_RESULT_MS)
         LiveState.changed()
         return started
     }
+
+    /** Prazo para o Android responder ao envio. */
+    const val NO_RESULT_MS = 30_000L
+
+    const val NO_RESULT =
+        "FALHOU: sem resposta do sistema em 30 s — o aparelho pode estar bloqueando o " +
+            "envio automático. Use “Revisar SMS para um participante”."
+
+    /** O que continuou PENDENTE virou falha: silêncio não é entrega. */
+    @Synchronized
+    fun expirePending(store: Store, ids: List<String>) {
+        val a = JSONArray(store.get(LOG, "[]"))
+        var changed = false
+        for (i in 0 until a.length()) {
+            val o = a.getJSONObject(i)
+            if (o.getString("id") in ids && o.getString("status") == PENDING) {
+                o.put("status", NO_RESULT)
+                changed = true
+            }
+        }
+        if (changed) {
+            store.put(LOG, a.toString())
+            LiveState.changed()
+        }
+    }
+
+    const val PENDING = "PENDENTE"
 
     /** Registro avulso, para ligações e falhas que não chegam a virar SMS. */
     fun note(store: Store, reason: String, to: String, status: String) {

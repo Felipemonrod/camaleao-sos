@@ -616,3 +616,53 @@ Android. A tela de Compatibilidade, em Xiaomi/Redmi/POCO, aponta a permissão do
 | Compilação, testes unitários e Lint | aprovados |
 | SMS no Redmi com a 0.6.1 | **não testado**: falta ler a linha `FALHOU: …` em Ocorrências |
 
+
+### Execução de 25/10/2026 (noite) — SMS no Redmi de terceiro, com sonda isolada
+
+Aparelho: **Xiaomi Redmi Note 12** (`23028RA60L`), **Android 15** (SDK 35),
+**HyperOS OS2.0.208.0.VMTMIXM** (MIUI V816), um chip (Claro BR). Celular de um amigo do
+responsável, conduzido com autorização dele e do responsável.
+
+**Instalação:** o APK foi instalado por `adb`, **não** pela página. Isso marcou o app
+como `RESTRICTION_INSTALLER_EXEMPT`, então **o teste do Play Protect e o da configuração
+restrita do Android 15 continuam pendentes** — esta execução não os reproduz.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| SHA-256 do APK 0.6.1 baixado da página | confere com o publicado |
+| SHA-256 do APK 0.5.0 baixado da página | confere com o publicado |
+| Chips | **um** (Claro BR), `defaultSmsSubId=1`, sem "perguntar sempre" |
+| `SEND_SMS` / `CALL_PHONE` | concedidas; appop `SEND_SMS` em `allow` |
+| Permissão do MIUI (Outras permissões → Enviar SMS) | **Permitido**, relatado pelo responsável |
+| SMS automático do app (0.6.1 e 0.5.0) | **nenhuma mensagem entregue**; nenhuma linha nova na pilha de SMS |
+| Ligação | funcionou |
+| Envio manual pelo aplicativo de mensagens | funcionou |
+| **Sonda isolada `tools/sms-probe`** | **`sendTextMessage` retorna sem exceção; appop registrado como `allow`; nenhum resultado no `sentIntent` em 40 s; nenhuma linha na pilha; nada entregue — 3 execuções** |
+
+**O que a sonda prova.** Ela tem 60 linhas e nada do Camaleão. Falha igual. Portanto o
+defeito **não está no código de SMS do projeto**: neste aparelho, um aplicativo que não é
+o de mensagens padrão não consegue enviar SMS, e o sistema não informa isso de forma
+alguma — nem erro, nem resultado.
+
+**Comparação entre versões publicadas** (pedida pelo responsável, que lembrava de uma
+versão antiga funcionando):
+
+| Versão | Caminho de envio |
+|---|---|
+| 0.3.0, 0.4.0, 0.5.0, 0.6.0 | `getSystemService(SmsManager)` → `sendMultipartTextMessage(phone, null, parts, sent, null)` — **idêntico nas quatro** |
+| 0.6.1 | o mesmo, mais `createForSubscriptionId` |
+
+Quatro das cinco versões são iguais no envio, e a sonda exercita esse mesmo caminho. A
+diferença lembrada não está no código; estava no estado do aparelho. ⚠️ As reinstalações
+feitas nesta sessão alteraram esse estado e **impedem reconstruir** o episódio de 23/10,
+quando 20 mensagens saíram deste mesmo aparelho.
+
+**Correção entregue** ([ADR 0016](../.claude/decisions/0016-silencio-do-sistema-e-plano-b-de-sms.md),
+RF-75): registro `PENDENTE` sem resposta em 30 s vira falha legível, e a Ocorrência passa
+a oferecer o envio pelo aplicativo de mensagens. 28 testes unitários e Lint aprovados.
+**Nada disso foi exercitado em aparelho:** o prazo de 30 s e o botão novo não foram
+vistos em tela.
+
+**Observação de método, para não se perder:** três horas de teste pela interface não
+responderam o que a sonda respondeu em dez minutos. Quando a pergunta é "o aparelho
+permite X?", o caminho curto é um programa que só faz X.

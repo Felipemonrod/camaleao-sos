@@ -107,6 +107,7 @@ completa · **P2** = desejável · **P3** = pós-protótipo.
 | RF-72 | O app mostra, no próprio aparelho, um diagnóstico de microfone, SMS, ligação, localização, notificação e economia de bateria, distinguindo permissão faltando, permissão bloqueada por configuração restrita e recurso inexistente no aparelho — e, no que falta, diz o que fazer. Ver [ADR 0015](../.claude/decisions/0015-janela-escolhida-e-compatibilidade-de-aparelho.md). | P1 |
 | RF-73 | A espera da `COMMAND_WINDOW` é escolhida pela usuária, de 5 a 60 s, padrão 30 s. As telas citam o valor em uso, nunca um fixo. Substitui a faixa de 4 a 6 s do RF-35. | P1 |
 | RF-74 | A duração da gravação de evidência é escolhida pela usuária (1 a 30 min) e a parada manual vale mesmo quando o microfone está com outro uso. | P1 |
+| RF-75 | O envio automático de SMS que não recebe resposta do sistema em 30 s é registrado como falha, e a Ocorrência passa a oferecer o envio pelo aplicativo de mensagens. Ver [ADR 0016](../.claude/decisions/0016-silencio-do-sistema-e-plano-b-de-sms.md). | P0 |
 
 ## Requisitos não funcionais
 
