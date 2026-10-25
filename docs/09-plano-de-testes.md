@@ -478,3 +478,35 @@ aparelho**: o S25 foi desconectado antes desta etapa.
 Motorola ou Xiaomi; o efeito da janela de 30 s sobre falso alarme (⚠️ é o custo
 declarado no ADR 0015 e a medição que falta); a parada da gravação durante uma ligação
 real.
+
+### Execução de 25/10/2026 (fim do dia) — validação do ADR 0015 no S25
+
+`tools/validar.ps1 -Serial <S25>` com o APK debug do commit `0a21a58`, Painel local pelo
+cabo. A bateria foi rodada **duas vezes**, e os resultados diferiram.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Compilação debug, Lint, testes unitários | aprovados; 26 unitários |
+| Testes do Painel (Node) | 21 aprovados, 0 falhas |
+| Instrumentados, 1ª execução | **`Tests run: 17, Failures: 1`** — `functionInTheSameBreathFiresWithoutTheWindow` falhou com `expected:<[ALERT]> but was:<[]>` |
+| Instrumentados, 2ª execução | `OK (17 tests)` em 45 s |
+| `ScreenOffTest` | `OK (2 tests)` |
+| O mesmo teste, isolado, 3 execuções seguidas | 3 aprovações |
+| A classe `CompleteFlowTest` inteira, sem o resto da suíte | aprovado |
+
+**⚠️ O RF-69 é intermitente na suíte completa.** Falhou uma vez em duas baterias e
+passou em todas as execuções isoladas. A causa não foi determinada: o `Stage1.minConfidence`,
+primeiro suspeito por ser um `var` global, nunca é escrito em lugar nenhum do código, e o
+`GrammarProbeTest` não toca em estado compartilhado. Não há correção neste commit porque
+não há diagnóstico.
+
+**O modo de falha, porém, é o benigno.** Quando a releitura não encontra a função, a
+`COMMAND_WINDOW` abre como sempre: a usuária que falou tudo numa tirada só não vê nada
+acontecer e precisa repetir a palavra. É perda de ativação (FRR), não disparo indevido —
+a direção certa, pela terceira regra do produto, mas ainda assim uma falha que a usuária
+sente.
+
+**Não verificado nesta execução:** o diagnóstico de compatibilidade do RF-72 numa tela
+real, em qualquer aparelho — a tela é alcançável só pela Área protegida, com o código da
+usuária; o efeito da janela de 30 s sobre falso alarme; a parada da gravação durante uma
+ligação real.
