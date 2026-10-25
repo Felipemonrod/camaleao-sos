@@ -192,4 +192,12 @@ class FunctionsTest {
             )
         )
     }
+
+    @Test
+    fun anyInstallerOutsideAStoreCountsAsSideloaded() {
+        for (installer in listOf(null, "com.miui.packageinstaller", "com.google.android.packageinstaller", "com.android.packageinstaller", "com.samsung.android.packageinstaller"))
+            assertTrue("$installer", InstallSource.sideloaded(installer))
+        for (store in listOf("com.android.vending", "com.sec.android.app.samsungapps"))
+            assertFalse(store, InstallSource.sideloaded(store))
+    }
 }
