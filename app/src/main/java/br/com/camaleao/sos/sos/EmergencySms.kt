@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.telephony.SmsManager
+import android.telephony.SubscriptionManager
 import br.com.camaleao.sos.LiveState
 import java.time.Instant
 import java.util.UUID
@@ -53,9 +54,7 @@ object EmergencySms {
                 )
             return 0
         }
-        val sms =
-            if (Build.VERSION.SDK_INT >= 31) context.getSystemService(SmsManager::class.java)
-            else @Suppress("DEPRECATION") SmsManager.getDefault()
+        val sms = manager(context)
         var started = 0
         for (c in contacts(store)) {
             val id = UUID.randomUUID().toString()
@@ -88,6 +87,43 @@ object EmergencySms {
         log(store, UUID.randomUUID().toString(), reason, to, status)
         LiveState.changed()
     }
+
+    /**
+     * Gerenciador de SMS do chip certo. Em celular com dois chips e "perguntar sempre"
+     * não existe chip padrão de SMS, e o envio em segundo plano falha: cai para o chip
+     * padrão de voz ou de dados. Os três ids vêm sem permissão de telefone.
+     */
+    private fun manager(context: Context): SmsManager {
+        val base =
+            if (Build.VERSION.SDK_INT >= 31) context.getSystemService(SmsManager::class.java)
+            else @Suppress("DEPRECATION") SmsManager.getDefault()
+        val sub =
+            listOf(
+                    SubscriptionManager.getDefaultSmsSubscriptionId(),
+                    SubscriptionManager.getDefaultVoiceSubscriptionId(),
+                    SubscriptionManager.getDefaultDataSubscriptionId(),
+                )
+                .firstOrNull { it != SubscriptionManager.INVALID_SUBSCRIPTION_ID } ?: return base
+        return runCatching {
+                if (Build.VERSION.SDK_INT >= 31) base.createForSubscriptionId(sub)
+                else @Suppress("DEPRECATION") SmsManager.getSmsManagerForSubscriptionId(sub)
+            }
+            .getOrDefault(base)
+    }
+
+    /** Motivo legível do código devolvido pelo Android no envio (SmsManager.RESULT_ERROR_*). */
+    fun reason(code: Int): String =
+        when (code) {
+            SmsManager.RESULT_ERROR_GENERIC_FAILURE ->
+                "recusado pelo sistema ou pela operadora (no Xiaomi: Outras permissões → Enviar SMS)"
+            SmsManager.RESULT_ERROR_RADIO_OFF -> "rádio desligado (modo avião?)"
+            SmsManager.RESULT_ERROR_NULL_PDU -> "mensagem inválida"
+            SmsManager.RESULT_ERROR_NO_SERVICE -> "sem sinal da operadora"
+            SmsManager.RESULT_ERROR_LIMIT_EXCEEDED -> "limite de envio do sistema"
+            SmsManager.RESULT_ERROR_SHORT_CODE_NOT_ALLOWED,
+            SmsManager.RESULT_ERROR_SHORT_CODE_NEVER_ALLOWED -> "número curto bloqueado"
+            else -> "código $code"
+        }
 
     fun log(store: Store): List<JSONObject> =
         JSONArray(store.get(LOG, "[]")).let { a -> (0 until a.length()).map { a.getJSONObject(it) } }
@@ -133,7 +169,7 @@ class SmsResultReceiver : BroadcastReceiver() {
             Store(context),
             id,
             if (resultCode == android.app.Activity.RESULT_OK) "ACEITO PELA OPERADORA"
-            else "FALHOU: código $resultCode",
+            else "FALHOU: ${EmergencySms.reason(resultCode)}",
         )
     }
 }

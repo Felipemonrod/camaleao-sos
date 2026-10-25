@@ -596,3 +596,23 @@ por lista de lojas (`domain/InstallSource`).
 
 **Falta:** ver a tela de Compatibilidade num Xiaomi de verdade com o APK da página.
 
+### Execução de 25/10/2026 — SMS que parou no Redmi com a 0.6.0
+
+Relato do responsável: no Redmi de um colega, a 0.5.0 enviava SMS e a 0.6.0 não, e
+aparecia "mensagem não enviada". Esse texto não é do app: o Camaleão registra
+`PENDENTE`, `ACEITO PELA OPERADORA` ou `FALHOU`. Então o SMS saiu do app e falhou depois.
+Comparado com a 0.5.0, **o caminho do SMS não mudou** (`EmergencySms.send`,
+`Actions.alert`, `Protocol`); só mudou o texto de falha. A causa **não foi comprovada**:
+o aparelho não foi ligado ao PC. Hipóteses: a permissão própria do MIUI ("Outras
+permissões → Enviar SMS") voltou para Perguntar com a reinstalação; ou o padrão de SMS
+num aparelho com dois chips ("perguntar sempre" ou chip sem crédito).
+
+Reforços da 0.6.1: o envio escolhe o chip padrão de SMS, depois o de voz e depois o de
+dados (sem permissão de telefone). A falha agora registra o motivo legível do código do
+Android. A tela de Compatibilidade, em Xiaomi/Redmi/POCO, aponta a permissão do MIUI.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Compilação, testes unitários e Lint | aprovados |
+| SMS no Redmi com a 0.6.1 | **não testado**: falta ler a linha `FALHOU: …` em Ocorrências |
+
