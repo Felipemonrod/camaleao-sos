@@ -513,3 +513,10 @@ disparar de novo na segunda; o `gap_s` não soma o trecho final se a gravação 
 durante a ligação; e, se o Android entregar silêncio (zeros) ao cliente silenciado em vez
 de erro, o corte vira silêncio no arquivo e o `gap_s` fica 0. Nenhum dos três foi medido.
 
+## 2026-10-25 — SMS no Redmi e 0.6.1
+
+"Mensagem não enviada" no Redmi do colega vem do sistema, não do app; o código do SMS é
+o mesmo da 0.5.0. A 0.6.1 escolhe o chip explicitamente (SMS → voz → dados), registra o
+motivo da falha e aponta a permissão do MIUI na Compatibilidade. Próximo passo no Redmi:
+conferir Outras permissões → Enviar SMS = Permitir e ler a linha FALHOU em Ocorrências.
+

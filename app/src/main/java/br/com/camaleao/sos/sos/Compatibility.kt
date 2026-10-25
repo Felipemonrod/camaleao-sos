@@ -53,6 +53,15 @@ object Compatibility {
         }
             .getOrDefault(true)
 
+    /** Xiaomi, Redmi e POCO têm uma segunda camada de permissões, fora da do Android. */
+    fun xiaomi() = Build.MANUFACTURER.lowercase() in setOf("xiaomi", "redmi", "poco")
+
+    // A permissão do Android pode estar concedida e o MIUI/HyperOS ainda barrar o envio
+    // em segundo plano: o SMS sai do app e aparece como "não enviada" no sistema.
+    const val MIUI_SMS =
+        "No Xiaomi, confira também Configurações → Apps → Cálculos → Outras permissões → " +
+            "Enviar SMS: Permitir (não \"Perguntar\"). Reinstalar o app pode voltar essa opção para Perguntar."
+
     const val RESTRICTED =
         "Abra Informações do app → ⋮ (canto superior direito) → " +
             "\"Permitir configurações restritas\" e só então conceda a permissão. " +
@@ -78,7 +87,15 @@ object Compatibility {
                         "Use o Painel ou um aparelho com chip.",
                 )
             else if (granted(context, Manifest.permission.SEND_SMS))
-                Item("SMS", State.OK, if (simReady(context)) "" else "Sem chip pronto: o envio vai falhar na operadora.")
+                Item(
+                    "SMS",
+                    State.OK,
+                    listOfNotNull(
+                            if (simReady(context)) null else "Sem chip pronto: o envio vai falhar na operadora.",
+                            if (xiaomi()) MIUI_SMS else null,
+                        )
+                        .joinToString(" "),
+                )
             else
                 Item(
                     "SMS",
