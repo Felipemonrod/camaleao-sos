@@ -735,3 +735,41 @@ terceiro, fora do que estava autorizado.
 
 **Nada neste diagnóstico aponta para o código do Camaleão.** O ciclo de modo avião não
 resolveu; ao contrário, trocou "falha com código" por "pendurado em retentativa".
+
+#### Causa raiz: linha pré-paga sem saldo
+
+O teste de SMS do aparelho **para o próprio número** falhou com o mesmo
+`SMS_FAIL_RETRY`. A caixa de entrada do aparelho explica por quê — duas mensagens da
+própria operadora, entre as mais recentes:
+
+```
+de 20100 : "O saldo do seu Pre-pago esta baixo! Recarregue ou antecipe R$10,00 de credito"
+de 555   : "Nao fique sem saldo. Recarregue a partir de R$20 e ganhe 2GB de Internet!"
+```
+
+A linha é **pré-paga e está sem saldo**. Enviar SMS é cobrado; receber não. Isso fecha
+cada observação da investigação, sem sobrar nenhuma:
+
+| Observação | Explicação |
+|---|---|
+| Recebe SMS normalmente (2509 na caixa de entrada) | receber não consome saldo |
+| Dados e RCS funcionam | o pacote de internet do plano continua ativo |
+| Ligação funciona | franquia de voz do plano |
+| **Nenhum SMS sai**, nem para o próprio número | enviar exige saldo |
+| `SMS_FAIL_RETRY` com `mErrorCode = -1` | a rede recusa a submissão sem devolver causa — é recusa de tarifação, não erro técnico |
+| 20 mensagens saíram em 23/10 | havia saldo naquele dia |
+| 101 falhas na telemetria do aparelho | acumuladas desde que o saldo acabou |
+
+**Nada disto tem relação com o Camaleão.** Nem com a versão, nem com a permissão do
+MIUI, nem com a escolha de chip, nem com o VoLTE. As cinco hipóteses levantadas ao longo
+da investigação — incluindo as três que a IA anunciou cedo demais — estavam todas erradas.
+
+**O que o episódio ensina ao produto:** num aparelho sem saldo, o Camaleão mostrava
+"enviado" e deixava o registro em `PENDENTE` para sempre. A usuária acreditaria que o
+pedido de ajuda saiu. É precisamente o cenário que o
+[ADR 0016](../.claude/decisions/0016-silencio-do-sistema-e-plano-b-de-sms.md) corrige:
+silêncio vira falha legível em 30 s, e o envio pelo aplicativo de mensagens sobe para
+primeiro plano.
+
+⚠️ **Não verificado:** que recarregar a linha restabelece o envio. É a conclusão óbvia e
+não foi testada — exigiria recarregar o celular de terceiro.
