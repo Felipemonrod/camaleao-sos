@@ -295,3 +295,66 @@ repetido por 30 min, a agenda com número normalizado (código de operadora e no
 dígito) e as ligações que param. Pendências reais: ver o fim de docs/09. A
 `stay_on_while_plugged_in` do S25 já era 15 e foi mantida.
 
+
+## 2026-10-24 — Função na mesma fala, gravação com começo e revisão da ligação
+
+A banca foi adiada. O responsável pediu três coisas e uma revisão, com o relato de um
+colega de que SMS, ligação, parada de ligações e localização funcionaram no aparelho
+dele — relato, não evidência conferida; o único problema apontado foi a gravação.
+
+Decisões no [ADR 0014](decisions/0014-funcao-na-mesma-fala-e-gravacao-honesta.md),
+requisitos novos RF-69 a RF-71 em [docs/03](../docs/03-requisitos.md), execução real em
+[docs/09](../docs/09-plano-de-testes.md#registro-de-execução).
+
+### O que estava errado
+
+- **A pausa entre a frase e a função era obrigatória por construção.** A gramática do
+  estágio 1 nunca teve as palavras de função, e o `reset()` ao aceitar a frase descartava
+  o resto do áudio. Explica as quatro frases aceitas sem disparo em 22/10.
+- **A gravação começava depois do disparo**: o arquivo abria com a cena em andamento.
+  É o que o colega ouviu.
+- **A ligação abria um buraco silencioso na gravação.** O prazo era testado dentro do
+  `accept()`, que não roda com o microfone cedido à chamada: a gravação ficava
+  `GRAVANDO` a chamada inteira, e o arquivo colava os dois lados do corte sem marca.
+
+### O que foi feito
+
+A releitura com gramática combinada reaproveita o Buffer pré-evento que a segunda
+leitura já usava, e roda **só quando a frase é aceita** — no caminho comum não há custo
+novo. A posição (comando depois da frase) é o que impede palavra dita antes valer como
+função; a comparação é de igualdade exata, nunca similaridade. O pré-rolo e o `gap_s`
+saem do mesmo buffer e do mesmo laço.
+
+Escolha que vale lembrar: o corte é **declarado**, não preenchido com silêncio.
+Fabricar amostras num arquivo chamado de evidência é pior que admitir o corte.
+
+### Revisão da ligação
+
+Um defeito real encontrado e corrigido: "Parar ligações" tocado durante os até 10 s de
+espera por posição era apagado pelo `run()` ao entrar. Agora `OpenLineCall.begin()` abre
+o pedido lá na `Actions.call`.
+
+Dois limites registrados e **não** corrigidos, por serem risco maior que o desvio na
+véspera: o teto de 30 min do RF-68 pode ser ultrapassado, porque `going()` só é testado
+entre chamadas e cada uma pode durar 15 min; e durante a ligação a Sentinela não ouve,
+então nem a frase nem o `cancelar` por voz funcionam por até 15 min.
+
+### Nada disso foi testado em aparelho
+
+25 testes unitários, Lint e 21 do Painel passam. Nenhum áudio passou pelo Vosk, nenhuma
+frase foi falada, nenhum arquivo de evidência foi gravado. O custo em tempo da terceira
+leitura na thread de captura é a medição mais importante que falta: a segunda já consome
+1–2 s e o `AudioRecord` tem folga de 4 s.
+
+### Ambiente desta sessão
+
+`ANDROID_HOME` não estava definido e o Gradle parou; resolvido apontando para
+`C:\Users\FELIPE\AppData\Local\Android\Sdk` na chamada (o `local.properties` é ignorado
+pelo Git). O `npm start` não roda neste notebook: a política de execução do PowerShell
+bloqueia o `npm.ps1`, e o `npm.cmd` deixa um `Deseja finalizar o arquivo em lotes (S/N)?`
+pendurado no Ctrl-C — use `node server.mjs`.
+
+Em 22/10 o S25 alcançou o Painel pelo hotspot numa rede classificada como **Pública**,
+com a regra de firewall valendo só em Privada e sem nenhuma outra regra encontrada para
+a porta 8443 ou para o `node.exe`. O alcance é fato (`HTTP 200` pedido do aparelho); a
+explicação não. Na banca, se não conectar, marcar a rede do hotspot como Privada.

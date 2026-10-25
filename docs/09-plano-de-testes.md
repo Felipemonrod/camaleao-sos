@@ -352,3 +352,47 @@ com o log `CamaleaoVoz`/`CamaleaoLigacao` acompanhado; `pm clear` ao fim.
 repetição do SMS (o chip do S25 recusa SMS); bateria com posição contínua (1 h fora do
 carregador); tudo no APK de release.
 
+
+### Execução de 24/10/2026 — função na mesma fala e gravação (só no PC)
+
+Mudanças do [ADR 0014](../.claude/decisions/0014-funcao-na-mesma-fala-e-gravacao-honesta.md):
+RF-69 (função dita junto com a frase), RF-70 (gravação começa pelo Buffer pré-evento) e
+RF-71 (prazo e corte declarados quando o microfone é da chamada). **Nenhum aparelho foi
+usado nesta execução.**
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Compilação Android debug | aprovada |
+| Lint | aprovado, sem erro novo |
+| Testes unitários | **25 aprovados, 0 falhas** (18 anteriores + 7 de `Stage1.commandAfterPhrase`) |
+| Testes do Painel (Node) | 21 aprovados, 0 falhas |
+| Função depois da frase, na mesma fala | aceita, com ou sem fala comum no meio |
+| Função dita **antes** da frase | recusada |
+| Palavras da função separadas ("enviar o alerta") | recusada: a exigência é contígua |
+| Duas funções na mesma fala | vale a primeira depois da frase |
+| `cancelar` na mesma fala | devolvido como `cancelar`, não como função |
+| Função desligada dita na mesma fala | ignorada |
+
+**O que esta execução não prova.** Tudo acima é leitura de listas de palavras em teste
+unitário: nenhum áudio passou pelo Vosk, nenhuma frase foi falada, nenhum arquivo de
+evidência foi gravado. Em particular, continuam **não verificados**:
+
+- que a releitura com gramática combinada encontre a função em voz real;
+- o custo em tempo da terceira leitura do Buffer, que roda na thread de captura — o
+  `AudioRecord` tem folga de 4 s e a segunda leitura já consome 1–2 s;
+- o pré-rolo de 8 s no arquivo exportado (`preroll_s`) e a conferência do hash depois dele;
+- o `gap_s` durante uma ligação real.
+
+### Revisão da ligação e da parada de ligações — 24/10/2026
+
+Pedida pelo responsável depois do relato de um colega de que ligação e parada
+funcionaram. O relato **não foi conferido aqui**; o que segue é leitura de código.
+
+| Ponto | Resultado da revisão |
+|---|---|
+| Parar ao desarmar | correto: `going()` exige `LiveState.active` e `onDestroy` chama `OpenLineCall.stop()` |
+| Parar ao excluir o último contato | correto: os contatos são relidos antes de cada chamada |
+| "Parar ligações" tocado durante a espera por posição | **era perdido**: `run()` zerava o pedido ao entrar, depois dos até 10 s de `LocationProbe`. Corrigido com `OpenLineCall.begin()` na `Actions.call` |
+| Chamada recusada pelo destinatário | o modo de chamada cai antes dos 40 s, o registro vira `SEM RESPOSTA (rodada n)` e a rodada seguinte acontece. Comportamento correto no código; **continua sem prova em aparelho** |
+| Teto de 30 min do RF-68 | ⚠️ `going()` só é testado entre chamadas e cada chamada pode durar 15 min: o total pode passar de 30 min. Não corrigido — mudar a temporização do laço sem aparelho é risco maior que o desvio |
+| Sentinela durante a ligação | ⚠️ o microfone é da chamada por até 15 min: a frase e o `cancelar` por voz **não funcionam** nesse intervalo. Já era assim; agora está escrito no ADR 0014 |

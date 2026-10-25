@@ -1,5 +1,6 @@
 package br.com.camaleao.sos.domain
 
+import br.com.camaleao.sos.sentinela.Stage1
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -106,5 +107,75 @@ class FunctionsTest {
         assertNull(PhoneBr.normalize("11 1234-5678"))
         assertEquals("+55 (11) 99999-0000", PhoneBr.format("+5511999990000"))
         assertTrue(AlertMessage.repeat("", null, 2, 6).startsWith("Repetindo (2/6): "))
+    }
+
+    // RF-69 — função dita na mesma fala da frase.
+
+    private val target = PhraseMatcher.words(phrase)
+    private val entries = VoiceCommands.grammar(cmds())
+
+    private fun heard(text: String) = PhraseMatcher.words(text).map { it to 1.0 }
+
+    @Test
+    fun functionSpokenRightAfterThePhraseIsFound() {
+        assertEquals(
+            "enviar alerta",
+            Stage1.commandAfterPhrase(heard("$phrase enviar alerta"), target, entries),
+        )
+        // Com fala comum entre a frase e a palavra, a função continua valendo.
+        assertEquals(
+            "chamar contato",
+            Stage1.commandAfterPhrase(heard("$phrase por favor chamar contato"), target, entries),
+        )
+    }
+
+    @Test
+    fun functionSpokenBeforeThePhraseDoesNotCount() {
+        assertNull(Stage1.commandAfterPhrase(heard("enviar alerta $phrase"), target, entries))
+    }
+
+    @Test
+    fun functionWordsMustBeContiguous() {
+        assertNull(Stage1.commandAfterPhrase(heard("$phrase enviar o alerta"), target, entries))
+    }
+
+    @Test
+    fun earliestFunctionAfterThePhraseWins() {
+        assertEquals(
+            "chamar contato",
+            Stage1.commandAfterPhrase(
+                heard("$phrase chamar contato enviar alerta"),
+                target,
+                entries,
+            ),
+        )
+    }
+
+    @Test
+    fun withoutThePhraseThereIsNoFunction() {
+        assertNull(Stage1.commandAfterPhrase(heard("enviar alerta agora"), target, entries))
+        assertNull(Stage1.commandAfterPhrase(heard(phrase), target, entries))
+    }
+
+    @Test
+    fun cancelInTheSameBreathIsReported() {
+        assertEquals(
+            VoiceCommands.CANCEL,
+            Stage1.commandAfterPhrase(heard("$phrase cancelar"), target, entries),
+        )
+        // E não é confundido com uma função: quem decide é o VoskPipeline.
+        assertNull(VoiceCommands.match(VoiceCommands.CANCEL, cmds()))
+    }
+
+    @Test
+    fun disabledFunctionIsNotHeardInTheSameBreath() {
+        val onlyAlert = cmds(on = false)
+        assertNull(
+            Stage1.commandAfterPhrase(
+                heard("$phrase chamar contato"),
+                target,
+                VoiceCommands.grammar(onlyAlert),
+            )
+        )
     }
 }

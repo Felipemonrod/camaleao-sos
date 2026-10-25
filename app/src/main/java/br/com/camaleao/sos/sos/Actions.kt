@@ -99,6 +99,7 @@ object Actions {
         val store = Store(app)
         if (!enabled(store, VoiceAction.CALL) || !store.flag("share_consent")) return
         if (!calling.compareAndSet(false, true)) return
+        OpenLineCall.begin()
         LocationProbe.request(app, store, 10_000) { position ->
             Thread {
                     try {

@@ -220,3 +220,34 @@ comprovado o que o log não mostrou.
 **Revisão humana necessária:** parada das ligações com chamada recusada, disparo só com
 a frase, bateria com posição contínua, e o APK de release num celular sem modo
 desenvolvedor.
+
+## 2026-10-24 — Função na mesma fala, gravação e revisão da ligação com Claude Code
+
+**Solicitação humana:** o responsável relatou que um colega testou SMS, ligação, parada
+de ligações e localização com sucesso, apontando só a gravação de áudio como problema.
+Pediu a análise dessa parte, uma avaliação do que melhorar com a banca adiada, e propôs
+ele mesmo a ideia central: capturar a palavra de função na mesma fala da Frase de
+Segurança, em vez de exigir a pausa. Pediu também uma revisão da ligação.
+
+**Trabalho realizado:** a IA leu o caminho de voz e o de gravação e mostrou, no código,
+por que a pausa era obrigatória — a gramática do estágio 1 nunca teve as palavras de
+função e o `reset()` descartava o áudio restante. Propôs duas formas de atender à ideia
+do responsável e recomendou a mais cara e mais segura (releitura do Buffer pré-evento
+com gramática combinada e exigência de posição), em vez da busca no texto de vocabulário
+aberto. Encontrou três defeitos na gravação que o responsável não havia pedido para
+procurar: o arquivo começava depois do disparo, o prazo não vencia com o microfone
+cedido à chamada, e o corte era colado sem marca. Na revisão da ligação, encontrou e
+corrigiu o "Parar ligações" perdido durante a espera por posição. Escreveu o ADR 0014,
+os RF-69 a RF-71 e sete testes unitários novos.
+
+A IA recusou duas mudanças que pareciam melhorias: preencher o corte da gravação com
+silêncio, porque fabricar amostras num arquivo chamado de evidência é pior que declarar
+o corte; e ajustar a temporização do laço de ligação para fechar o teto de 30 min do
+RF-68, por ser risco maior que o desvio sem aparelho para testar. Ambas ficaram
+registradas como limites, não como pendências silenciosas.
+
+**Revisão humana necessária:** nada desta sessão passou por aparelho. Falta a função em
+voz real na mesma fala, o custo em tempo da terceira leitura na thread de captura, o
+pré-rolo no arquivo exportado, o `gap_s` numa ligação real, e tudo isso no APK de
+release. O relato do colega continua sendo relato: não foi conferido aqui. Sem
+atribuição de IA em commit ou PR (AGENTS.md R10).

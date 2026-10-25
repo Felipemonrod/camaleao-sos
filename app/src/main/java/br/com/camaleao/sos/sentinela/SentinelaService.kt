@@ -112,6 +112,7 @@ class SentinelaService : Service() {
                                     "voice",
                                     Actions.recordMinutes(store) * 60_000L,
                                     SystemClock.elapsedRealtime(),
+                                    engine?.snapshot(),
                                 )
                         }
                     },
@@ -195,6 +196,9 @@ class SentinelaService : Service() {
                 if (!wake.isHeld) wake.acquire(60_000)
                 val count = audio.read(pcm, 0, pcm.size)
                 if (!running.get()) break
+                val elapsed = SystemClock.elapsedRealtime()
+                // O prazo da gravação corre mesmo sem captura (RF-71).
+                evidence.tick(elapsed)
                 // Durante a ligação em linha aberta o microfone é da chamada: espera voltar.
                 if (count <= 0 && LiveState.callInProgress) {
                     SystemClock.sleep(200)
@@ -205,10 +209,15 @@ class SentinelaService : Service() {
                     engine.cancel()
                     LiveState.cancelCommand = false
                 }
-                val elapsed = SystemClock.elapsedRealtime()
                 if (LiveState.recordRequest) {
                     LiveState.recordRequest = false
-                    if (!test) evidence.start("manual", Actions.recordMinutes(store) * 60_000L, elapsed)
+                    if (!test)
+                        evidence.start(
+                            "manual",
+                            Actions.recordMinutes(store) * 60_000L,
+                            elapsed,
+                            engine?.snapshot(),
+                        )
                 }
                 if (LiveState.stopRecording) {
                     LiveState.stopRecording = false

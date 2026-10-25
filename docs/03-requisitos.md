@@ -82,7 +82,7 @@ completa · **P2** = desejável · **P3** = pós-protótipo.
 | RF-52 | Os logs nunca contêm a Frase de Segurança, transcrição completa, GPS ou chaves. | P0 |
 | RF-53 | O app **não** afirma que a gravação é prova judicial válida. Afirma apenas preservar integridade e rastreabilidade. | P0 |
 
-### Funções por voz e Rede de Apoio — ver ADR 0010, ADR 0012 e ADR 0013
+### Funções por voz e Rede de Apoio — ver ADR 0010, ADR 0012, ADR 0013 e ADR 0014
 
 | ID | Requisito | Pri |
 |---|---|---|
@@ -101,6 +101,9 @@ completa · **P2** = desejável · **P3** = pós-protótipo.
 | RF-66 | O SMS de alerta se repete a cada 5 min por 30 min com a posição do momento, e para ao desarmar ou cancelar. | P1 |
 | RF-67 | O contato vem do seletor da agenda ou é digitado, e é gravado como `+55DDDNÚMERO`, sem código de operadora. O número final é mostrado para confirmação. | P1 |
 | RF-68 | As ligações em linha aberta param ao desarmar, ao excluir o último contato, pelo botão "Parar ligações" ou após 30 min. | P0 |
+| RF-69 | A função dita na mesma fala da Frase de Segurança é acionada sem pausa: aceita a frase, o Buffer pré-evento é relido uma vez com gramática combinada, e a palavra só vale se aparecer contígua e **depois** da frase. Sem ela, a `COMMAND_WINDOW` abre como antes. Ver [ADR 0014](../.claude/decisions/0014-funcao-na-mesma-fala-e-gravacao-honesta.md). | P1 |
+| RF-70 | A gravação de evidência começa pelo Buffer pré-evento, e o registro informa em `preroll_s` quantos segundos vieram de antes do disparo. | P1 |
+| RF-71 | A gravação nunca fabrica amostras para tapar o tempo em que o microfone esteve com outro uso: o prazo corre mesmo sem captura e o registro informa o corte em `gap_s`. | P0 |
 
 ## Requisitos não funcionais
 

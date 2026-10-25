@@ -394,7 +394,7 @@ foi marcado como concluído por existir código.
 | Fachada e Área protegida | calculadora, códigos configuráveis, limpeza ao sair e proteção de captura |
 | Atualização do primeiro protótipo | migração verificada; limites em [docs/07](07-privacidade-lgpd.md#controles-entregues-e-limites-pendentes) |
 | Voz | Vosk PT em dois estágios; estágio 1 com iscas, junção de resultados e segunda leitura do Buffer pré-evento ([ADR 0011](../.claude/decisions/0011-estagio-1-com-iscas-e-segunda-leitura.md)); checagem de vocabulário; medição em [docs/06](06-reconhecimento-de-voz.md#ajuste-medido-do-estágio-1-e-das-palavras) |
-| Funções por voz | palavra por função com liga/desliga: alerta, localização e gravação ([ADR 0010](../.claude/decisions/0010-palavra-por-funcao-e-sms-automatico.md)) |
+| Funções por voz | palavra por função com liga/desliga: alerta, localização e gravação ([ADR 0010](../.claude/decisions/0010-palavra-por-funcao-e-sms-automatico.md)). A função dita na mesma fala da frase é lida do Buffer pré-evento com gramática combinada, sem esperar a janela ([ADR 0014](../.claude/decisions/0014-funcao-na-mesma-fala-e-gravacao-honesta.md)); só nos testes unitários, sem aparelho |
 | Ligação para a Rede de Apoio | código pronto, sem teste em aparelho: Painel liga com voz e, sem Painel, linha aberta no aparelho ([ADR 0012](../.claude/decisions/0012-ligacao-pelo-painel-e-linha-aberta.md)) |
 | Ciclo de vida | FGS, notificação, sinal de vida, liberação de captura e lembrete após boot |
 | Ocorrência | conteúdo cifrado, manifesto assinado/encadeado, quatro estados e auditoria |
@@ -402,7 +402,7 @@ foi marcado como concluído por existir código.
 | Painel | autenticação e atualização por SSE; recebimento técnico, sem promessa de atendimento |
 | Comunicação com a Rede de Apoio | SMS automático após a preparação, com link de mapa; registro pendente/aceito/falha, sem afirmar entrega. O compositor manual continua disponível |
 | Localização | pontual ao disparar alerta ou compartilhar posição, com consentimento; repetição a cada 5 min só com a Sentinela armada; serviço `microphone\|location` |
-| Gravação | função desligada por padrão; blocos AES-GCM no aparelho, exportação WAV conferida por hash; J1 adiado pelo responsável para o protótipo |
+| Gravação | função desligada por padrão; blocos AES-GCM no aparelho, exportação WAV conferida por hash; começa pelo Buffer pré-evento e declara `preroll_s` e `gap_s` ([ADR 0014](../.claude/decisions/0014-funcao-na-mesma-fala-e-gravacao-honesta.md)), sem teste em aparelho; J1 adiado pelo responsável para o protótipo |
 | Apresentação | modo apresentação só em build debug; setup do Painel com escolha de rede e renovação de certificado; `tools/preparar-notebook.ps1`; kit de teste de SMS por Wi-Fi |
 | Não entregue | RF-31 depende de Q5; vínculo criptográfico de C4 e retenção automática pendentes |
 | Não homologado | FAR/FRR com pessoas, bateria fora do carregador, três aparelhos, iOS e operação real de atendimento |
