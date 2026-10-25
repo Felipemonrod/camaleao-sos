@@ -438,3 +438,34 @@ longa **não foi feita**, e é o que condiciona o status do ADR 0015.
 O S25 foi desconectado antes de rodar a bateria instrumentada com estas mudanças. A
 página do `gh-pages` foi reescrita (menos cara de texto gerado, mais seção de problemas
 de permissão de SMS/ligação) mas **não foi publicada** — espera o aval do responsável.
+
+## 2026-10-25 (fim) — preparo da 0.6.0 e a instrumentação da intermitência
+
+Versão subida para **0.6.0 / versionCode 6** em `app/build.gradle.kts`. O APK assinado
+**não** sai deste notebook: `release.jks` e `keystore.properties` continuam ausentes
+(conferido de novo nesta sessão).
+
+### Para publicar a 0.6.0, no PC que tem a chave
+
+1. `git checkout main && git pull` (depois do merge do PR #4).
+2. `./gradlew :app:assembleRelease` — exige `keystore.properties` no lugar.
+3. Conferir o SHA-256 do APK gerado.
+4. Criar a pré-release `v0.6.0-demo` e subir o APK.
+5. Em `gh-pages/index.html`, trocar três coisas: o `href` do botão, o rótulo
+   "0.5.0 · 73 MB" e o SHA-256 do rodapé. Trocar também a frase "Na versão 0.5.0 a
+   janela para a palavra é de 6 segundos" — na 0.6.0 o padrão é 30 s e é ajustável.
+
+Enquanto o site apontar para a 0.5.0, a banca baixa a versão de 22/10, sem nada do
+ADR 0014 nem do 0015. Isso é consequência da chave morar em outra máquina, não escolha.
+
+### Instrumentação da intermitência do RF-69
+
+`sameBreath()` passou a registrar, quando não acha o comando, qual dos dois casos
+ocorreu: "frase não localizada" ou "sem comando depois da frase", com a contagem de
+palavras. Só contagem — transcrição em log violaria o RF-52. O `CompleteFlowTest` roda
+com `diagnostics = true` para esse registro aparecer.
+
+A reprodução ainda não aconteceu com a instrumentação no ar: a bateria seguinte parou
+antes de começar porque o `ScreenOffTest` da rodada anterior deixou o aparelho
+bloqueado, e o bloqueio é seguro. Rodar de novo exige a tela destravada por quem tem a
+senha.

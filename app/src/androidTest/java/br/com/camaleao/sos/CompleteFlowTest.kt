@@ -96,6 +96,7 @@ class CompleteFlowTest {
                 {},
                 { actions += it },
                 { phases += it },
+                diagnostics = true,
             )
             .use { p ->
                 var now = 0L

@@ -204,11 +204,16 @@ class VoskPipeline(
             feed(breath, ordered)
             val result = JSONObject(breath.finalResult)
             breath.reset()
-            return Stage1.commandAfterPhrase(
-                Stage1.words(result),
-                target,
-                VoiceCommands.grammar(commands),
-            )
+            val ws = Stage1.words(result)
+            val entry = Stage1.commandAfterPhrase(ws, target, VoiceCommands.grammar(commands))
+            // Só contagem: a transcrição nunca vai para o log (RF-52).
+            if (entry == null)
+                log(
+                    if (Stage1.at(ws.map { it.first }, target) == null)
+                        "releitura: frase não localizada (${ws.size} palavras)"
+                    else "releitura: sem comando depois da frase (${ws.size} palavras)"
+                )
+            return entry
         } finally {
             ordered.fill(0)
         }
@@ -299,10 +304,7 @@ object Stage1 {
     ): String? {
         if (target.isEmpty()) return null
         val words = ws.map { it.first }
-        val start =
-            (0..words.size - target.size).firstOrNull {
-                words.subList(it, it + target.size) == target
-            } ?: return null
+        val start = at(words, target) ?: return null
         val tail = words.subList(start + target.size, words.size)
         var best: Pair<Int, String>? = null
         for (entry in entries) {
@@ -315,6 +317,12 @@ object Stage1 {
         }
         return best?.second
     }
+
+    /** Onde [target] começa em [words], ou null se não aparece contíguo. */
+    fun at(words: List<String>, target: List<String>): Int? =
+        (0..words.size - target.size).firstOrNull {
+            words.subList(it, it + target.size) == target
+        }
 
     /** Primeiro comando da gramática que aparece contíguo no resultado do estágio 2. */
     fun command(result: JSONObject, entries: List<String>): String? {
