@@ -352,3 +352,231 @@ com o log `CamaleaoVoz`/`CamaleaoLigacao` acompanhado; `pm clear` ao fim.
 repetição do SMS (o chip do S25 recusa SMS); bateria com posição contínua (1 h fora do
 carregador); tudo no APK de release.
 
+
+### Execução de 24/10/2026 — função na mesma fala e gravação (só no PC)
+
+Mudanças do [ADR 0014](../.claude/decisions/0014-funcao-na-mesma-fala-e-gravacao-honesta.md):
+RF-69 (função dita junto com a frase), RF-70 (gravação começa pelo Buffer pré-evento) e
+RF-71 (prazo e corte declarados quando o microfone é da chamada). **Nenhum aparelho foi
+usado nesta execução.**
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Compilação Android debug | aprovada |
+| Lint | aprovado, sem erro novo |
+| Testes unitários | **25 aprovados, 0 falhas** (18 anteriores + 7 de `Stage1.commandAfterPhrase`) |
+| Testes do Painel (Node) | 21 aprovados, 0 falhas |
+| Função depois da frase, na mesma fala | aceita, com ou sem fala comum no meio |
+| Função dita **antes** da frase | recusada |
+| Palavras da função separadas ("enviar o alerta") | recusada: a exigência é contígua |
+| Duas funções na mesma fala | vale a primeira depois da frase |
+| `cancelar` na mesma fala | devolvido como `cancelar`, não como função |
+| Função desligada dita na mesma fala | ignorada |
+
+**O que esta execução não prova.** Tudo acima é leitura de listas de palavras em teste
+unitário: nenhum áudio passou pelo Vosk, nenhuma frase foi falada, nenhum arquivo de
+evidência foi gravado. Em particular, continuam **não verificados**:
+
+- que a releitura com gramática combinada encontre a função em voz real;
+- o custo em tempo da terceira leitura do Buffer, que roda na thread de captura — o
+  `AudioRecord` tem folga de 4 s e a segunda leitura já consome 1–2 s;
+- o pré-rolo de 8 s no arquivo exportado (`preroll_s`) e a conferência do hash depois dele;
+- o `gap_s` durante uma ligação real.
+
+### Revisão da ligação e da parada de ligações — 24/10/2026
+
+Pedida pelo responsável depois do relato de um colega de que ligação e parada
+funcionaram. O relato **não foi conferido aqui**; o que segue é leitura de código.
+
+| Ponto | Resultado da revisão |
+|---|---|
+| Parar ao desarmar | correto: `going()` exige `LiveState.active` e `onDestroy` chama `OpenLineCall.stop()` |
+| Parar ao excluir o último contato | correto: os contatos são relidos antes de cada chamada |
+| "Parar ligações" tocado durante a espera por posição | **era perdido**: `run()` zerava o pedido ao entrar, depois dos até 10 s de `LocationProbe`. Corrigido com `OpenLineCall.begin()` na `Actions.call` |
+| Chamada recusada pelo destinatário | o modo de chamada cai antes dos 40 s, o registro vira `SEM RESPOSTA (rodada n)` e a rodada seguinte acontece. Comportamento correto no código; **continua sem prova em aparelho** |
+| Teto de 30 min do RF-68 | ⚠️ `going()` só é testado entre chamadas e cada chamada pode durar 15 min: o total pode passar de 30 min. Não corrigido — mudar a temporização do laço sem aparelho é risco maior que o desvio |
+| Sentinela durante a ligação | ⚠️ o microfone é da chamada por até 15 min: a frase e o `cancelar` por voz **não funcionam** nesse intervalo. Já era assim; agora está escrito no ADR 0014 |
+
+### Execução de 25/10/2026 — RF-69 no S25, com motor real e voz sintética
+
+`tools/validar.ps1 -Serial <S25>` no Galaxy S25 (SM-S931B), APK **debug** do commit
+`3302845`, Painel local pelo cabo (`adb reverse`, `https://127.0.0.1:8443`). A release
+0.5.0 foi desinstalada pelo responsável: assinaturas diferentes impedem instalar o debug
+por cima (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`).
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Compilação debug, Lint e testes unitários | aprovados; **25 testes unitários** |
+| Testes do Painel (Node) | **21 aprovados, 0 falhas** |
+| Instrumentados no S25 (`CompleteFlowTest` + `GrammarProbeTest`) | **`OK (17 tests)`** em 44 s: 15 executados e 2 ignorados por regra (alternar rede só em emulador; SMS sem número autorizado) |
+| `ScreenOffTest` | **`OK (2 tests)`** em 9,5 s |
+| **RF-69 — frase e função numa tirada só** (`mesmafala.wav`) | **aprovado no motor real**: a função disparou `ALERT` e a `COMMAND_WINDOW` **não chegou a abrir** |
+| **RF-69 — função dita antes da frase** (`antes.wav`) | **aprovado**: nada disparou e a janela abriu normalmente |
+
+As amostras `mesmafala.wav` ("Preciso buscar meu caderno azul enviar alerta") e
+`antes.wav` ("Enviar alerta preciso buscar meu caderno azul") foram acrescentadas a
+`tools/gerar-amostras.ps1`. Os `.wav` são ignorados pelo Git e precisam ser gerados em
+cada máquina — neste notebook não existiam, e a primeira bateria falhou com
+`FileNotFoundException: frase.wav` em 3 testes antes de serem gerados.
+
+**O que esta execução prova e o que não prova.** Prova que a releitura com gramática
+combinada encontra a função falada junto com a frase, no Vosk real, no aparelho real, e
+que a regra de posição recusa a palavra dita antes. Os 44 s da suíte incluem a terceira
+leitura sem nenhum `Captura interrompida`, mas isso **não** é a medição do custo em
+tempo pedida: o teste alimenta PCM em laço, não lê de `AudioRecord` com prazo real.
+
+Continua **não verificado**:
+
+- a função na mesma fala em **voz de pessoa**, e não sintetizada;
+- o custo da terceira leitura na thread de captura com a Sentinela armada de verdade;
+- o pré-rolo (`preroll_s`) num arquivo de evidência exportado e conferido por hash;
+- o `gap_s` durante uma ligação real;
+- tudo isso em APK de **release**: a chave de assinatura não está neste notebook, então
+  a 0.5.0 publicada na página **não contém** nada deste ADR.
+
+### Execução de 25/10/2026 (tarde) — voz real do responsável, lida no log
+
+Teste conduzido pelo responsável no S25 com o APK debug; o log `CamaleaoVoz` e
+`CamaleaoLigacao` foi lido do aparelho ao fim. O responsável relatou que "funcionou
+perfeitamente". O log confirma os disparos **e** mostra por qual caminho eles saíram.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Frase reconhecida em voz real | 5 aceitações, todas com `nota=1.00` |
+| Disparo das funções por voz real | `COMANDO ligacao`, `COMANDO alerta` e `COMANDO gravacao` (3×) |
+| **Caminho usado** | **todos pela `COMMAND_WINDOW`**: nenhuma linha `na mesma fala` no log |
+| Intervalo medido entre a frase aceita e o comando | 2,0 s · 2,9 s · 2,7 s · 4,1 s · 2,5 s |
+| **RF-68 — "Parar ligações"** | **comprovado**: `parada: armada=true pedido=true`, com a Sentinela ainda armada. Duas chamadas antes disso, de 15 s e 10 s, registradas como sem resposta |
+| Falso positivo em fala comum | 24 linhas `fala sem a frase` no mesmo período, nenhuma virou disparo |
+
+**O que o log corrige no entendimento anterior.** O RF-69 **não** foi exercitado em voz
+humana: o responsável fala a frase e espera, e os cinco disparos vieram pela janela. A
+prova do RF-69 segue sendo a de amostra sintética, mais cedo nesta data. O que a voz
+real provou é o caminho antigo, e a medição dos intervalos — entre 2,0 s e 4,1 s, com
+uma janela de 6 s — é o que motivou o [ADR 0015](../.claude/decisions/0015-janela-escolhida-e-compatibilidade-de-aparelho.md).
+
+As duas chamadas de 15 s e 10 s encerradas antes dos 40 s aparecem no log como sem
+resposta. O log **não** distingue recusa pelo destinatário de não atendimento, então a
+prova específica de "parada com chamada recusada" continua pendente; a prova de que o
+botão para as rodadas, essa sim, está feita.
+
+### Execução de 25/10/2026 (tarde) — janela ajustável e compatibilidade, só no PC
+
+Mudanças do ADR 0015: RF-72 (diagnóstico de compatibilidade), RF-73 (janela escolhida
+pela usuária, padrão 30 s) e RF-74 (duração da gravação e parada manual). **Sem
+aparelho**: o S25 foi desconectado antes desta etapa.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Compilação debug e Lint | aprovados |
+| Testes unitários | **26 aprovados, 0 falhas** (25 anteriores + a janela ajustável) |
+| Janela de 30 s aceita comando aos 25 s | aprovado |
+| Janela de 6 s recusa o mesmo comando aos 25 s | aprovado, devolve `timeout` |
+| `DomainTest.keywordAloneDoesNotDispatchAndTimeoutIsSafe` | ajustado: usava o `6000` fixo e passou a usar a janela em vigor |
+
+**Não verificado nesta etapa:** o diagnóstico de compatibilidade numa tela real, em
+Motorola ou Xiaomi; o efeito da janela de 30 s sobre falso alarme (⚠️ é o custo
+declarado no ADR 0015 e a medição que falta); a parada da gravação durante uma ligação
+real.
+
+### Execução de 25/10/2026 (fim do dia) — validação do ADR 0015 no S25
+
+`tools/validar.ps1 -Serial <S25>` com o APK debug do commit `0a21a58`, Painel local pelo
+cabo. A bateria foi rodada **duas vezes**, e os resultados diferiram.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Compilação debug, Lint, testes unitários | aprovados; 26 unitários |
+| Testes do Painel (Node) | 21 aprovados, 0 falhas |
+| Instrumentados, 1ª execução | **`Tests run: 17, Failures: 1`** — `functionInTheSameBreathFiresWithoutTheWindow` falhou com `expected:<[ALERT]> but was:<[]>` |
+| Instrumentados, 2ª execução | `OK (17 tests)` em 45 s |
+| `ScreenOffTest` | `OK (2 tests)` |
+| O mesmo teste, isolado, 3 execuções seguidas | 3 aprovações |
+| A classe `CompleteFlowTest` inteira, sem o resto da suíte | aprovado |
+
+**⚠️ O RF-69 é intermitente na suíte completa.** Falhou uma vez em duas baterias e
+passou em todas as execuções isoladas. A causa não foi determinada: o `Stage1.minConfidence`,
+primeiro suspeito por ser um `var` global, nunca é escrito em lugar nenhum do código, e o
+`GrammarProbeTest` não toca em estado compartilhado. Não há correção neste commit porque
+não há diagnóstico.
+
+**O modo de falha, porém, é o benigno.** Quando a releitura não encontra a função, a
+`COMMAND_WINDOW` abre como sempre: a usuária que falou tudo numa tirada só não vê nada
+acontecer e precisa repetir a palavra. É perda de ativação (FRR), não disparo indevido —
+a direção certa, pela terceira regra do produto, mas ainda assim uma falha que a usuária
+sente.
+
+**Não verificado nesta execução:** o diagnóstico de compatibilidade do RF-72 numa tela
+real, em qualquer aparelho — a tela é alcançável só pela Área protegida, com o código da
+usuária; o efeito da janela de 30 s sobre falso alarme; a parada da gravação durante uma
+ligação real.
+
+### Execução de 25/10/2026 (noite) — a intermitência da gravação, com causa
+
+A instrumentação pedida pelo responsável achou a causa de uma das duas
+intermitências. A outra continua aberta.
+
+**Reproduzida e corrigida: `ScreenOffTest` com `expected:<[CONCLUIDA]> but was:<[GRAVANDO]>`.**
+
+| Verificação executada | Resultado observado |
+|---|---|
+| `ScreenOffTest`, antes da correção | **3 falhas em 6 execuções** |
+| Log do gravador numa execução que falhou | `start(manual): id=337ff392 preroll=8s` seguido de `stop(parada pela usuária): id=337ff392` — a parada **aconteceu**, no registro certo |
+| `ScreenOffTest`, depois da correção | **8 aprovações em 8 execuções** |
+| Testes unitários e Lint | aprovados |
+
+**Causa.** O `stop()` zerava `LiveState.recording` **antes** de escrever o estado final
+no registro. Entre as duas coisas há o fechamento do bloco corrente em AES-GCM e um
+SHA-256 sobre o arquivo inteiro. Quem espera o fim da gravação — a tela, ou o teste —
+via `recording == false` e lia um registro que ainda dizia `GRAVANDO`. O pré-rolo de 8 s
+do RF-70 triplicou o tamanho do arquivo e, com ele, essa janela: o defeito era antigo, a
+mudança de ontem é que o tornou frequente.
+
+A correção põe `LiveState.recording = false` depois do `update()`. O estado passa a
+significar o que diz: gravação fechada no registro.
+
+**Guarda acrescentada por hipótese errada, mantida por mérito próprio.** Antes de achar
+a causa, a suspeita foi outra: os pedidos da tela (`stopRecording`, `recordRequest`,
+`cancelCommand`) são globais e cada sessão de captura tem o seu gravador, então uma
+thread de sessão encerrada podia consumir o pedido de quem está no ar. A guarda
+`current === session` foi acrescentada e **não** resolveu a intermitência (3 falhas em 6
+depois dela). Fica porque o risco que ela descreve é real, não porque conserta isto.
+
+**Continua sem explicação: a falha única do RF-69** (`functionInTheSameBreathFiresWithoutTheWindow`,
+`expected:<[ALERT]> but was:<[]>`). Não reproduziu em nenhuma das execuções desde então
+— 3 isoladas, 5 da suíte principal, 1 do `validar.ps1` completo. O registro de
+diagnóstico ficou no lugar: quando a releitura não acha o comando, o log diz se foi
+"frase não localizada" ou "sem comando depois da frase", com contagem de palavras. Se
+voltar a acontecer, o log diz qual dos dois é.
+
+**Observação de ambiente:** o `ScreenOffTest` deixa o aparelho bloqueado e o bloqueio é
+seguro. Rodar a suíte principal logo depois faz o teste da Activity falhar com
+`Activity never becomes requested state "[RESUMED]"` — é a tela travada, não defeito.
+
+### Execução de 25/10/2026 (final) — bateria completa depois da correção
+
+`tools/validar.ps1 -Serial <S25>` no Galaxy S25, APK debug do commit `bff970d`, Painel
+local pelo cabo. Execução única, sem falha.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Compilação debug, Lint, testes unitários | aprovados; 26 unitários |
+| Testes do Painel (Node) | 21 aprovados, 0 falhas |
+| Instrumentados (`CompleteFlowTest` + `GrammarProbeTest`) | `OK (17 tests)` em 45,8 s |
+| `ScreenOffTest` | `OK (2 tests)` em 9,5 s |
+| Caminho do RF-69, conferido no log | `COMANDO alerta na mesma fala` — a releitura disparou sem abrir a janela |
+| Releitura nos casos negativos | `sem comando depois da frase`, 5 palavras na frase sozinha e 7 na amostra com a palavra **antes** da frase |
+| `frase não localizada` na releitura | **nenhuma ocorrência**: a gramática combinada achou a frase em todas as vezes |
+| Gravação com tela apagada | `start(manual): preroll=8s` seguido de `stop(parada pela usuária)` no mesmo id |
+
+O pré-rolo do RF-70 aparece pela primeira vez medido no aparelho: `preroll=8s` no
+registro da gravação iniciada com a tela apagada, e o `exportWav` do próprio teste
+conferiu o arquivo por hash depois disso.
+
+**Permanece em aberto:** a falha única do RF-69 de mais cedo nesta data não reproduziu
+em nenhuma das 10 execuções seguintes. A instrumentação da releitura fica no lugar.
+
+**Permanece sem teste:** o diagnóstico de compatibilidade do RF-72 numa tela real; o
+efeito da janela de 30 s sobre falso alarme; o `gap_s` numa ligação real; e tudo isto em
+APK de release — a chave de assinatura não está neste notebook, então a página pública
+continua entregando a 0.5.0.

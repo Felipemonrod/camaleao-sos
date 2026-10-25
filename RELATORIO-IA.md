@@ -220,3 +220,93 @@ comprovado o que o log não mostrou.
 **Revisão humana necessária:** parada das ligações com chamada recusada, disparo só com
 a frase, bateria com posição contínua, e o APK de release num celular sem modo
 desenvolvedor.
+
+## 2026-10-24 — Função na mesma fala, gravação e revisão da ligação com Claude Code
+
+**Solicitação humana:** o responsável relatou que um colega testou SMS, ligação, parada
+de ligações e localização com sucesso, apontando só a gravação de áudio como problema.
+Pediu a análise dessa parte, uma avaliação do que melhorar com a banca adiada, e propôs
+ele mesmo a ideia central: capturar a palavra de função na mesma fala da Frase de
+Segurança, em vez de exigir a pausa. Pediu também uma revisão da ligação.
+
+**Trabalho realizado:** a IA leu o caminho de voz e o de gravação e mostrou, no código,
+por que a pausa era obrigatória — a gramática do estágio 1 nunca teve as palavras de
+função e o `reset()` descartava o áudio restante. Propôs duas formas de atender à ideia
+do responsável e recomendou a mais cara e mais segura (releitura do Buffer pré-evento
+com gramática combinada e exigência de posição), em vez da busca no texto de vocabulário
+aberto. Encontrou três defeitos na gravação que o responsável não havia pedido para
+procurar: o arquivo começava depois do disparo, o prazo não vencia com o microfone
+cedido à chamada, e o corte era colado sem marca. Na revisão da ligação, encontrou e
+corrigiu o "Parar ligações" perdido durante a espera por posição. Escreveu o ADR 0014,
+os RF-69 a RF-71 e sete testes unitários novos.
+
+A IA recusou duas mudanças que pareciam melhorias: preencher o corte da gravação com
+silêncio, porque fabricar amostras num arquivo chamado de evidência é pior que declarar
+o corte; e ajustar a temporização do laço de ligação para fechar o teto de 30 min do
+RF-68, por ser risco maior que o desvio sem aparelho para testar. Ambas ficaram
+registradas como limites, não como pendências silenciosas.
+
+**Revisão humana necessária:** nada desta sessão passou por aparelho. Falta a função em
+voz real na mesma fala, o custo em tempo da terceira leitura na thread de captura, o
+pré-rolo no arquivo exportado, o `gap_s` numa ligação real, e tudo isso no APK de
+release. O relato do colega continua sendo relato: não foi conferido aqui. Sem
+atribuição de IA em commit ou PR (AGENTS.md R10).
+
+## 2026-10-25 — Prova em aparelho do RF-69 com Claude Code
+
+**Solicitação humana:** explicar o Auto-fix do PR, testar no S25 já conectado, subir as
+alterações e dizer se o app pode ser apresentado como está. O responsável também
+perguntou se daria para enviar o áudio por SMS, para a prova não se perder com o
+aparelho.
+
+**Trabalho realizado:** a IA descobriu que as amostras sintéticas de
+`app/src/androidTest/assets` são ignoradas pelo Git e não existiam neste notebook — três
+testes falhavam por arquivo ausente, e não por defeito. Gerou as amostras, acrescentou
+duas novas ao `tools/gerar-amostras.ps1` (frase e função numa tirada só, e a palavra
+dita antes da frase) e escreveu dois testes instrumentados para o RF-69, que passaram no
+motor Vosk real no S25: a função disparou sem a janela de comando abrir, e a palavra
+anterior à frase não disparou nada.
+
+A IA respondeu à pergunta do SMS com áudio sem implementar: o limite de carga do SMS
+inviabiliza, o MMS exige dados e ser o app padrão de mensagens, e o caminho que o
+projeto já tem é subir a evidência ao Painel. Apontou que isso é decisão nova e esbarra
+na pendência jurídica J1, então parou e devolveu ao responsável (AGENTS.md §5).
+
+Também registrou o limite que decide a apresentação: sem a chave de assinatura neste
+notebook, o APK 0.5.0 da página não contém nenhuma das melhorias destes dois dias.
+
+**Revisão humana necessária:** a função na mesma fala em voz de pessoa, o custo em tempo
+da terceira leitura com a Sentinela armada, o pré-rolo num arquivo exportado, o `gap_s`
+numa ligação real, e a geração da 0.6.0 no PC que tem a chave. Sem atribuição de IA em
+commit ou PR (AGENTS.md R10).
+
+## 2026-10-25 (tarde) — Janela ajustável e compatibilidade com Claude Code
+
+**Solicitação humana:** o responsável testou com a própria voz, relatou sucesso, e pediu
+quatro coisas: aumentar a janela de comando de 6 para 30 s, reescrever a página pública
+com menos cara de texto gerado por IA, melhorar a compatibilidade com outros aparelhos
+(um colega não conseguiu habilitar SMS num Motorola) e deixar a duração da gravação a
+cargo do usuário.
+
+**Trabalho realizado:** antes de aceitar o relato, a IA leu o log do aparelho e
+encontrou algo que o responsável não tinha notado: os cinco disparos saíram pela janela
+de comando, e **nenhum** pela releitura do ADR 0014 — o RF-69 segue provado só com
+amostra sintética. Os intervalos medidos no log (2,0 a 4,1 s) confirmaram, com número, o
+motivo do pedido de uma janela maior. O mesmo log trouxe evidência de uma pendência
+antiga: o botão "Parar ligações" parou as rodadas com a Sentinela armada.
+
+A IA tornou a janela um ajuste da usuária (5 a 60 s, padrão 30 s) em vez de trocar uma
+constante por outra, e fez as telas citarem o valor em uso. Escreveu o `Compatibility.kt`,
+que separa permissão negada, permissão bloqueada por configuração restrita e recurso
+inexistente no aparelho — a causa provável do caso do Motorola. Corrigiu a parada da
+gravação, que não respondia com o microfone na chamada. Reescreveu a página pública com
+uma seção específica sobre destravar SMS e ligação.
+
+A IA declarou o custo em vez de omiti-lo: a janela de 30 s multiplica por cinco o tempo
+em que uma palavra de função é aceita, e a medição de falso alarme com a janela longa
+não foi feita. É o que condiciona o status do ADR 0015.
+
+**Revisão humana necessária:** bateria instrumentada com estas mudanças (o aparelho foi
+desconectado antes), o diagnóstico numa tela de Motorola ou Xiaomi, o efeito da janela
+longa sobre falso alarme, e a publicação da página, que não foi feita sem aval. Sem
+atribuição de IA em commit ou PR (AGENTS.md R10).

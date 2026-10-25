@@ -460,11 +460,11 @@ class MainActivity : ComponentActivity() {
     }
 
     internal fun permissions() {
-        val power = getSystemService(PowerManager::class.java)
         AlertDialog.Builder(this)
-            .setTitle("Microfone e energia")
+            .setTitle("Compatibilidade deste aparelho")
             .setMessage(
-                "A escuta exige microfone e notificação visível. Economia de bateria: ${if(power.isPowerSaveMode)"ligada"else "desligada"}. Fabricantes podem interromper o serviço. Não há isenção automática de bateria."
+                br.com.camaleao.sos.sos.Compatibility.text(this) +
+                    "\n\nFabricantes podem interromper o serviço. Não há isenção automática de bateria."
             )
             .setPositiveButton("Permissões") { _, _ ->
                 startActivity(

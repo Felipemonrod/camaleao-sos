@@ -295,3 +295,208 @@ repetido por 30 min, a agenda com número normalizado (código de operadora e no
 dígito) e as ligações que param. Pendências reais: ver o fim de docs/09. A
 `stay_on_while_plugged_in` do S25 já era 15 e foi mantida.
 
+
+## 2026-10-24 — Função na mesma fala, gravação com começo e revisão da ligação
+
+A banca foi adiada. O responsável pediu três coisas e uma revisão, com o relato de um
+colega de que SMS, ligação, parada de ligações e localização funcionaram no aparelho
+dele — relato, não evidência conferida; o único problema apontado foi a gravação.
+
+Decisões no [ADR 0014](decisions/0014-funcao-na-mesma-fala-e-gravacao-honesta.md),
+requisitos novos RF-69 a RF-71 em [docs/03](../docs/03-requisitos.md), execução real em
+[docs/09](../docs/09-plano-de-testes.md#registro-de-execução).
+
+### O que estava errado
+
+- **A pausa entre a frase e a função era obrigatória por construção.** A gramática do
+  estágio 1 nunca teve as palavras de função, e o `reset()` ao aceitar a frase descartava
+  o resto do áudio. Explica as quatro frases aceitas sem disparo em 22/10.
+- **A gravação começava depois do disparo**: o arquivo abria com a cena em andamento.
+  É o que o colega ouviu.
+- **A ligação abria um buraco silencioso na gravação.** O prazo era testado dentro do
+  `accept()`, que não roda com o microfone cedido à chamada: a gravação ficava
+  `GRAVANDO` a chamada inteira, e o arquivo colava os dois lados do corte sem marca.
+
+### O que foi feito
+
+A releitura com gramática combinada reaproveita o Buffer pré-evento que a segunda
+leitura já usava, e roda **só quando a frase é aceita** — no caminho comum não há custo
+novo. A posição (comando depois da frase) é o que impede palavra dita antes valer como
+função; a comparação é de igualdade exata, nunca similaridade. O pré-rolo e o `gap_s`
+saem do mesmo buffer e do mesmo laço.
+
+Escolha que vale lembrar: o corte é **declarado**, não preenchido com silêncio.
+Fabricar amostras num arquivo chamado de evidência é pior que admitir o corte.
+
+### Revisão da ligação
+
+Um defeito real encontrado e corrigido: "Parar ligações" tocado durante os até 10 s de
+espera por posição era apagado pelo `run()` ao entrar. Agora `OpenLineCall.begin()` abre
+o pedido lá na `Actions.call`.
+
+Dois limites registrados e **não** corrigidos, por serem risco maior que o desvio na
+véspera: o teto de 30 min do RF-68 pode ser ultrapassado, porque `going()` só é testado
+entre chamadas e cada uma pode durar 15 min; e durante a ligação a Sentinela não ouve,
+então nem a frase nem o `cancelar` por voz funcionam por até 15 min.
+
+### Nada disso foi testado em aparelho
+
+25 testes unitários, Lint e 21 do Painel passam. Nenhum áudio passou pelo Vosk, nenhuma
+frase foi falada, nenhum arquivo de evidência foi gravado. O custo em tempo da terceira
+leitura na thread de captura é a medição mais importante que falta: a segunda já consome
+1–2 s e o `AudioRecord` tem folga de 4 s.
+
+### Ambiente desta sessão
+
+`ANDROID_HOME` não estava definido e o Gradle parou; resolvido apontando para
+`C:\Users\FELIPE\AppData\Local\Android\Sdk` na chamada (o `local.properties` é ignorado
+pelo Git). O `npm start` não roda neste notebook: a política de execução do PowerShell
+bloqueia o `npm.ps1`, e o `npm.cmd` deixa um `Deseja finalizar o arquivo em lotes (S/N)?`
+pendurado no Ctrl-C — use `node server.mjs`.
+
+Em 22/10 o S25 alcançou o Painel pelo hotspot numa rede classificada como **Pública**,
+com a regra de firewall valendo só em Privada e sem nenhuma outra regra encontrada para
+a porta 8443 ou para o `node.exe`. O alcance é fato (`HTTP 200` pedido do aparelho); a
+explicação não. Na banca, se não conectar, marcar a rede do hotspot como Privada.
+
+## 2026-10-25 — RF-69 comprovado no S25 e o limite da chave de release
+
+Bateria completa no S25 com o APK debug do commit `3302845`: 25 unitários, 21 do Painel,
+`OK (17 tests)` nos instrumentados e `OK (2 tests)` no `ScreenOffTest`. Detalhes em
+[docs/09](../docs/09-plano-de-testes.md#registro-de-execução).
+
+O que mudou de status: a função dita **na mesma fala** da frase agora tem prova no motor
+real, em aparelho real — `ALERT` disparou e a `COMMAND_WINDOW` não abriu. A amostra
+contrária (palavra antes da frase) também passou: nada disparou. Voz sintética, não
+pessoa.
+
+Duas armadilhas de ambiente que custaram uma bateria cada:
+
+- Os `.wav` de `app/src/androidTest/assets` são ignorados pelo Git e não existiam neste
+  notebook: 3 testes falharam com `FileNotFoundException` até rodar
+  `tools/gerar-amostras.ps1`. Vale rodar o gerador **antes** da primeira bateria em
+  máquina nova.
+- O `ScreenOffTest` termina deixando o aparelho bloqueado, e o `validar.ps1` se recusa a
+  começar bloqueado. Duas baterias seguidas exigem desbloquear no meio.
+
+Para instalar o debug foi preciso desinstalar a release 0.5.0 (assinaturas diferentes,
+mesmo `applicationId`). O responsável autorizou desinstalar a antiga e instalar a nova
+quando for necessário.
+
+**O limite que decide a apresentação:** a chave de assinatura não está neste notebook
+(`release.jks` e `keystore.properties` ausentes). A 0.5.0 da página **não contém** o
+ADR 0014. Levar estas melhorias à banca exige dar merge no PR #4 e gerar a 0.6.0 no PC
+que tem a chave, republicando a página com o SHA-256 novo.
+
+Auto-fix ligado no PR #4 (CI verde, `MERGEABLE`/`CLEAN`).
+
+Pergunta do responsável, respondida sem implementar: **enviar o áudio por SMS** para a
+prova não morrer com o aparelho. Não cabe — SMS carrega 140 bytes por parte e nem o
+multipart chega perto de um minuto de áudio; MMS caberia, mas exige dados móveis, custo
+e ser o app de SMS padrão, e o chip do S25 já recusa SMS comum. O caminho que o projeto
+já tem para isso é subir a evidência ao Painel pelo transporte HTTPS com fila e recibo
+(RF-43, RF-45). Isso é decisão nova e mexe com J1 e com o docs/07: não foi feito.
+
+## 2026-10-25 (tarde) — o log desmentiu a boa notícia, e isso foi útil
+
+O responsável testou com a própria voz e relatou que funcionou perfeitamente. Funcionou
+mesmo: cinco frases aceitas com `nota=1.00` e os comandos `ligacao`, `alerta` e
+`gravacao` disparados. Mas o log não tem **nenhuma** linha `na mesma fala`: os cinco
+disparos saíram pela `COMMAND_WINDOW`. O RF-69 continua provado só com amostra
+sintética.
+
+Os intervalos entre a frase aceita e o comando, medidos no log: 2,0 s · 2,9 s · 2,7 s ·
+4,1 s · 2,5 s. Com janela de 6 s, quem hesita perde. É o dado que motivou o
+[ADR 0015](decisions/0015-janela-escolhida-e-compatibilidade-de-aparelho.md), e o pedido
+do responsável por 30 s tinha razão de ser.
+
+**Achado bom no mesmo log:** `parada: armada=true pedido=true` depois de duas chamadas
+de 15 s e 10 s. O botão "Parar ligações" para as rodadas com a Sentinela ainda armada —
+o RF-68 saiu da lista de não comprovados nessa parte. O log não distingue recusa de não
+atendimento, então a prova específica com chamada recusada continua pendente.
+
+### O que entrou
+
+Janela de comando virou ajuste da usuária (5 a 60 s, padrão 30 s) e as telas passaram a
+citar o valor em uso em vez de um `6` fixo. A duração da gravação já era ajuste e virou
+requisito (RF-74). "Parar gravação" passou a valer com o microfone na chamada — era o
+mesmo defeito do prazo, no mesmo ponto do laço.
+
+`Compatibility.kt`: diagnóstico no aparelho que separa permissão negada, permissão
+**bloqueada por configuração restrita** (instalação fora da loja, Android 13+) e recurso
+que o aparelho não tem. É o que faltava para o colega do Motorola entender por que o SMS
+não saía — e o registro de falha do `EmergencySms` agora diz qual dos três é.
+
+### Custo declarado, não escondido
+
+A janela de 30 s multiplica por cinco a janela em que uma palavra de função é aceita
+depois de um reconhecimento correto da frase. A medição de falso alarme com a janela
+longa **não foi feita**, e é o que condiciona o status do ADR 0015.
+
+### Pendente
+
+O S25 foi desconectado antes de rodar a bateria instrumentada com estas mudanças. A
+página do `gh-pages` foi reescrita (menos cara de texto gerado, mais seção de problemas
+de permissão de SMS/ligação) mas **não foi publicada** — espera o aval do responsável.
+
+## 2026-10-25 (fim) — preparo da 0.6.0 e a instrumentação da intermitência
+
+Versão subida para **0.6.0 / versionCode 6** em `app/build.gradle.kts`. O APK assinado
+**não** sai deste notebook: `release.jks` e `keystore.properties` continuam ausentes
+(conferido de novo nesta sessão).
+
+### Para publicar a 0.6.0, no PC que tem a chave
+
+1. `git checkout main && git pull` (depois do merge do PR #4).
+2. `./gradlew :app:assembleRelease` — exige `keystore.properties` no lugar.
+3. Conferir o SHA-256 do APK gerado.
+4. Criar a pré-release `v0.6.0-demo` e subir o APK.
+5. Em `gh-pages/index.html`, trocar três coisas: o `href` do botão, o rótulo
+   "0.5.0 · 73 MB" e o SHA-256 do rodapé. Trocar também a frase "Na versão 0.5.0 a
+   janela para a palavra é de 6 segundos" — na 0.6.0 o padrão é 30 s e é ajustável.
+
+Enquanto o site apontar para a 0.5.0, a banca baixa a versão de 22/10, sem nada do
+ADR 0014 nem do 0015. Isso é consequência da chave morar em outra máquina, não escolha.
+
+### Instrumentação da intermitência do RF-69
+
+`sameBreath()` passou a registrar, quando não acha o comando, qual dos dois casos
+ocorreu: "frase não localizada" ou "sem comando depois da frase", com a contagem de
+palavras. Só contagem — transcrição em log violaria o RF-52. O `CompleteFlowTest` roda
+com `diagnostics = true` para esse registro aparecer.
+
+A reprodução ainda não aconteceu com a instrumentação no ar: a bateria seguinte parou
+antes de começar porque o `ScreenOffTest` da rodada anterior deixou o aparelho
+bloqueado, e o bloqueio é seguro. Rodar de novo exige a tela destravada por quem tem a
+senha.
+
+## 2026-10-25 (noite) — a causa da gravação que não fechava
+
+Duas intermitências, uma resolvida.
+
+**Resolvida.** `ScreenOffTest` falhava com `expected:<[CONCLUIDA]> but was:<[GRAVANDO]>`,
+3 vezes em 6. O log do gravador mostrou que a parada acontecia no registro certo — então
+o problema não era a parada, era a ordem. O `stop()` zerava `LiveState.recording` antes
+do `update()`, e entre os dois há o fechamento AES-GCM e um SHA-256 do arquivo inteiro.
+Quem esperava o fim lia `recording == false` com o registro ainda em `GRAVANDO`.
+
+O defeito é antigo; o pré-rolo de 8 s do RF-70 triplicou o arquivo e tornou a janela
+grande o bastante para aparecer. Depois da correção: **8 em 8**.
+
+A lição que vale guardar: `LiveState` é promessa para a tela. Zerar um estado antes de o
+registro refletir a realidade é a mesma classe de erro que o produto proíbe no alerta —
+dizer que acabou antes de ter acabado.
+
+**Aberta.** A falha única do RF-69 não reproduziu em mais nenhuma das 9 execuções
+seguintes. A instrumentação ficou: quando a releitura não acha o comando, o log diz se a
+frase não foi localizada ou se não havia comando depois dela, com contagem de palavras
+(nunca texto, RF-52).
+
+**Guarda que não era a causa.** `current === session` nos pedidos da tela foi acrescentada
+na hipótese errada e ficou: o risco que ela descreve — thread de sessão encerrada
+consumindo o pedido de quem está no ar — é real, mas não era este defeito.
+
+**Armadilha de bancada:** o `ScreenOffTest` deixa a tela bloqueada e o bloqueio é seguro.
+A suíte principal logo depois falha no teste da Activity com `Activity never becomes
+requested state "[RESUMED]"`. É a tela, não o código. Entre uma bateria e outra, alguém
+precisa destravar.

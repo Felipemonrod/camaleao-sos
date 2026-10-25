@@ -37,17 +37,21 @@ class VoskPipeline(
     private val verify: Double = Stage1.VERIFY,
     /** Modo escolhido pela usuária: a frase sozinha aciona todas as funções ligadas. */
     private val phraseFires: Boolean = false,
+    /** Espera da janela de comando, escolhida pela usuária (ADR 0015). */
+    windowMs: Long = VoiceFlow.WINDOW_MS,
 ) : AutoCloseable {
     init {
         LibVosk.setLogLevel(LogLevel.WARNINGS)
     }
 
     private val model = Model(directory.absolutePath)
-    private val flow = VoiceFlow(phrase, threshold, commands)
+    private val flow = VoiceFlow(phrase, threshold, commands, windowMs)
     private val target = PhraseMatcher.words(phrase)
     private val recognizer = Recognizer(model, 16000f, keywordGrammar()).apply { setWords(true) }
     // Segunda leitura: vocabulário aberto sobre o Buffer pré-evento, só após acerto da gramática.
     private val verifier = Recognizer(model, 16000f)
+    // RF-69: terceira leitura do mesmo Buffer, com frase e funções na mesma gramática.
+    private val breath = Recognizer(model, 16000f, breathGrammar()).apply { setWords(true) }
     private val ring = ShortArray(RING)
     private var cursor = 0
 
@@ -56,6 +60,14 @@ class VoskPipeline(
 
     private fun commandGrammar(): String =
         JSONArray(Stage1.withDecoys(VoiceCommands.grammar(commands))).toString()
+
+    private fun breathGrammar(): String =
+        JSONArray(
+                Stage1.withDecoys(
+                    listOf(PhraseMatcher.grammarForm(phrase)) + VoiceCommands.grammar(commands)
+                )
+            )
+            .toString()
 
     fun accept(pcm: ShortArray, count: Int, now: Long) {
         for (i in 0 until count) {
@@ -100,6 +112,23 @@ class VoskPipeline(
                 waiting()
                 return
             }
+            // RF-69: a função dita junto com a frase não espera a janela abrir.
+            if (ok) {
+                val spoken = sameBreath()
+                if (spoken == VoiceCommands.CANCEL) {
+                    log("frase e cancelar na mesma fala")
+                    waiting()
+                    return
+                }
+                val action = spoken?.let { VoiceCommands.match(it, commands) }
+                if (action != null) {
+                    log("COMANDO ${action.key} na mesma fala")
+                    if (action == VoiceAction.ALERT) onPhase(VoicePhase.SOS_EVENT.name)
+                    onCommand(action)
+                    waiting()
+                    return
+                }
+            }
             if (ok && flow.open(now)) {
                 recognizer.reset()
                 recognizer.setGrammar(commandGrammar())
@@ -129,23 +158,65 @@ class VoskPipeline(
         }
     }
 
-    /** Relê os últimos 8 s em RAM com vocabulário aberto e confirma a frase. */
-    private fun verified(): Boolean {
-        verifier.reset()
+    /** Buffer pré-evento em ordem cronológica. Quem chama zera a cópia depois de usar. */
+    private fun orderedRing(): ShortArray {
         val ordered = ShortArray(RING)
         System.arraycopy(ring, cursor, ordered, 0, RING - cursor)
         System.arraycopy(ring, 0, ordered, RING - cursor, cursor)
+        return ordered
+    }
+
+    /** Buffer pré-evento para a gravação começar antes do disparo (RF-70). */
+    fun snapshot(): ShortArray = orderedRing()
+
+    private fun feed(target: Recognizer, pcm: ShortArray) {
+        target.reset()
         var i = 0
-        while (i < RING) {
-            val n = minOf(3200, RING - i)
-            verifier.acceptWaveForm(ordered.copyOfRange(i, i + n), n)
+        while (i < pcm.size) {
+            val n = minOf(3200, pcm.size - i)
+            target.acceptWaveForm(pcm.copyOfRange(i, i + n), n)
             i += n
         }
-        val text = JSONObject(verifier.finalResult).optString("text")
-        ordered.fill(0)
-        verifier.reset()
-        lastScore = "%.2f".format(java.util.Locale.ROOT, PhraseMatcher.bestWindow(phrase, text))
-        return PhraseMatcher.bestWindow(phrase, text) >= verify
+    }
+
+    /** Relê os últimos 8 s em RAM com vocabulário aberto e confirma a frase. */
+    private fun verified(): Boolean {
+        val ordered = orderedRing()
+        try {
+            feed(verifier, ordered)
+            val text = JSONObject(verifier.finalResult).optString("text")
+            verifier.reset()
+            val score = PhraseMatcher.bestWindow(phrase, text)
+            lastScore = "%.2f".format(java.util.Locale.ROOT, score)
+            return score >= verify
+        } finally {
+            ordered.fill(0)
+        }
+    }
+
+    /**
+     * RF-69: relê o mesmo Buffer com a gramática combinada e devolve a entrada de comando
+     * dita **depois** da frase, na mesma fala. Roda só quando a frase foi aceita.
+     */
+    private fun sameBreath(): String? {
+        val ordered = orderedRing()
+        try {
+            feed(breath, ordered)
+            val result = JSONObject(breath.finalResult)
+            breath.reset()
+            val ws = Stage1.words(result)
+            val entry = Stage1.commandAfterPhrase(ws, target, VoiceCommands.grammar(commands))
+            // Só contagem: a transcrição nunca vai para o log (RF-52).
+            if (entry == null)
+                log(
+                    if (Stage1.at(ws.map { it.first }, target) == null)
+                        "releitura: frase não localizada (${ws.size} palavras)"
+                    else "releitura: sem comando depois da frase (${ws.size} palavras)"
+                )
+            return entry
+        } finally {
+            ordered.fill(0)
+        }
     }
 
     private var lastScore = ""
@@ -168,6 +239,7 @@ class VoskPipeline(
 
     override fun close() {
         ring.fill(0)
+        breath.close()
         verifier.close()
         recognizer.close()
         model.close()
@@ -218,6 +290,39 @@ object Stage1 {
         }
         return false
     }
+
+    /**
+     * RF-69: entrada de comando dita **depois** da frase, na mesma fala. Devolve a que
+     * aparece mais cedo depois dela; null se a frase não está no trecho ou nada a segue.
+     * A posição é o que impede uma palavra dita antes da frase, por outro motivo, valer
+     * como função. A comparação é de igualdade exata, nunca de similaridade.
+     */
+    fun commandAfterPhrase(
+        ws: List<Pair<String, Double>>,
+        target: List<String>,
+        entries: List<String>,
+    ): String? {
+        if (target.isEmpty()) return null
+        val words = ws.map { it.first }
+        val start = at(words, target) ?: return null
+        val tail = words.subList(start + target.size, words.size)
+        var best: Pair<Int, String>? = null
+        for (entry in entries) {
+            val t = PhraseMatcher.words(entry)
+            if (t.isEmpty() || t.size > tail.size) continue
+            val at =
+                (0..tail.size - t.size).firstOrNull { tail.subList(it, it + t.size) == t }
+                    ?: continue
+            if (best == null || at < best.first) best = at to entry
+        }
+        return best?.second
+    }
+
+    /** Onde [target] começa em [words], ou null se não aparece contíguo. */
+    fun at(words: List<String>, target: List<String>): Int? =
+        (0..words.size - target.size).firstOrNull {
+            words.subList(it, it + target.size) == target
+        }
 
     /** Primeiro comando da gramática que aparece contíguo no resultado do estágio 2. */
     fun command(result: JSONObject, entries: List<String>): String? {

@@ -65,9 +65,11 @@ class DomainTest {
         val v = VoiceFlow("preciso buscar meu caderno azul", 1.0)
         assertTrue(v.phrase("preciso buscar meu caderno azul", 0))
         assertEquals(VoicePhase.COMMAND_WINDOW, v.phase)
-        assertTrue(v.expire(6000))
+        // A espera é ajuste da usuária (RF-73): o teste usa a janela em vigor, não um número fixo.
+        assertFalse(v.expire(VoiceFlow.WINDOW_MS - 1))
+        assertTrue(v.expire(VoiceFlow.WINDOW_MS))
         assertEquals(VoicePhase.WAITING_KEYWORD, v.phase)
-        assertNull(v.command("enviar alerta", 6001))
+        assertNull(v.command("enviar alerta", VoiceFlow.WINDOW_MS + 1))
     }
 
     @Test

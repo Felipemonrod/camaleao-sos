@@ -96,6 +96,7 @@ class CompleteFlowTest {
                 {},
                 { actions += it },
                 { phases += it },
+                diagnostics = true,
             )
             .use { p ->
                 var now = 0L
@@ -122,6 +123,22 @@ class CompleteFlowTest {
             assertFalse("Negativo $negative não deve abrir janela: $p", p.contains("COMMAND_WINDOW"))
             assertTrue(a.isEmpty())
         }
+    }
+
+    /** RF-69: frase e função numa tirada só, sem a pausa da janela de comando. */
+    @Test
+    fun functionInTheSameBreathFiresWithoutTheWindow() {
+        val (actions, phases) = run("mesmafala")
+        assertEquals(listOf(VoiceAction.ALERT), actions)
+        assertFalse("A função saiu na releitura, sem abrir janela: $phases", phases.contains("COMMAND_WINDOW"))
+    }
+
+    /** RF-69: a posição é o que vale — palavra dita antes da frase não é função. */
+    @Test
+    fun functionBeforeThePhraseDoesNotFire() {
+        val (actions, phases) = run("antes")
+        assertTrue("Palavra antes da frase não dispara: $actions", actions.isEmpty())
+        assertTrue("A frase ainda abre a janela: $phases", phases.contains("COMMAND_WINDOW"))
     }
 
     @Test

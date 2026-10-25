@@ -112,6 +112,7 @@ class SentinelaService : Service() {
                                     "voice",
                                     Actions.recordMinutes(store) * 60_000L,
                                     SystemClock.elapsedRealtime(),
+                                    engine?.snapshot(),
                                 )
                         }
                     },
@@ -123,6 +124,7 @@ class SentinelaService : Service() {
                         (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0,
                     verify = store.verify(),
                     phraseFires = store.flag("phrase_fires"),
+                    windowMs = Actions.commandWindowS(store) * 1000L,
                 )
             if (!running.get()) return
             if (
@@ -180,6 +182,7 @@ class SentinelaService : Service() {
             if (!test) LiveState.main.post { LocationProbe.track(this, store) }
             LiveState.active = true
             LiveState.preparing = false
+            LiveState.commandWindowS = Actions.commandWindowS(store)
             LiveState.voicePhase = "WAITING_KEYWORD"
             LiveState.status =
                 if (test) "Teste de frase — nenhum Protocolo SOS" else "Armada — microfone ativo"
@@ -195,24 +198,36 @@ class SentinelaService : Service() {
                 if (!wake.isHeld) wake.acquire(60_000)
                 val count = audio.read(pcm, 0, pcm.size)
                 if (!running.get()) break
+                val elapsed = SystemClock.elapsedRealtime()
+                // O prazo da gravação corre mesmo sem captura (RF-71).
+                evidence.tick(elapsed)
+                // Os pedidos da tela são globais e cada sessão tem o seu gravador: uma
+                // thread de sessão encerrada não pode consumir o "parar gravação" de quem
+                // está no ar, senão o pedido some sem nada acontecer.
+                val owner = current === session
+                if (owner && LiveState.stopRecording) {
+                    LiveState.stopRecording = false
+                    evidence.stop("parada pela usuária")
+                }
                 // Durante a ligação em linha aberta o microfone é da chamada: espera voltar.
                 if (count <= 0 && LiveState.callInProgress) {
                     SystemClock.sleep(200)
                     continue
                 }
                 check(count > 0) { "Captura interrompida" }
-                if (LiveState.cancelCommand) {
+                if (owner && LiveState.cancelCommand) {
                     engine.cancel()
                     LiveState.cancelCommand = false
                 }
-                val elapsed = SystemClock.elapsedRealtime()
-                if (LiveState.recordRequest) {
+                if (owner && LiveState.recordRequest) {
                     LiveState.recordRequest = false
-                    if (!test) evidence.start("manual", Actions.recordMinutes(store) * 60_000L, elapsed)
-                }
-                if (LiveState.stopRecording) {
-                    LiveState.stopRecording = false
-                    evidence.stop("parada pela usuária")
+                    if (!test)
+                        evidence.start(
+                            "manual",
+                            Actions.recordMinutes(store) * 60_000L,
+                            elapsed,
+                            engine?.snapshot(),
+                        )
                 }
                 // O mesmo bloco vai para a gravação e para o reconhecimento (RF-29).
                 evidence.accept(pcm, count, elapsed)

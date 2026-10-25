@@ -21,7 +21,7 @@ A arquitetura correta usa **os dois, em série**:
 ```
 sempre ligado          só após o gatilho
 ┌──────────────┐       ┌─────────────────┐
-│  KWS passivo │──────▶│ janela ASR 4–6s │──────▶ evento SOS
+│  KWS passivo │──────▶│ janela ASR ajustável │──────▶ evento SOS
 │ custo baixo  │ frase │ comando restrito│ ação
 └──────────────┘       └─────────────────┘
 ```
@@ -46,7 +46,7 @@ microfone no Android é caminho garantido para conflito de sessão.
 | Estado | Quem recebe áudio | O que acontece |
 |---|---|---|
 | `WAITING_KEYWORD` | só sherpa KWS | ring buffer em RAM, sobrescrito; nada persistido |
-| `COMMAND_WINDOW` | só Vosk, gramática restrita | janela de 4–6 s; timeout volta a KWS |
+| `COMMAND_WINDOW` | só Vosk, gramática restrita | janela ajustável, padrão 30 s (RF-73); timeout volta a KWS |
 | `SOS_EVENT` | gravação pós-gatilho, se habilitada | localização, manifesto, fila de alerta |
 
 Decisão de engenharia a **medir**, não a chutar: manter o Vosk carregado em RAM

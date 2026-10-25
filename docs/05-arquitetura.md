@@ -59,7 +59,7 @@ microfone no Android é caminho garantido para conflito de sessão de áudio.
                                  ▼
                   ┌──────────────────────────────┐
                   │      COMMAND_WINDOW          │
-         timeout  │  janela de 4–6 s             │
+         timeout  │  janela ajustável (RF-73)             │
       ┌───────────┤  só o estágio ASR recebe     │
       │           │  gramática restrita          │
       │           └──────────────┬───────────────┘

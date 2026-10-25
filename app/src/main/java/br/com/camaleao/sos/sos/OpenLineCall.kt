@@ -26,6 +26,15 @@ object OpenLineCall {
 
     @Volatile private var stopRequested = false
 
+    /**
+     * Abre o pedido de ligação. Fica fora do [run] de propósito: entre o comando e a
+     * primeira chamada há a espera por posição, e um "Parar ligações" tocado nesse
+     * intervalo não pode ser apagado pelo [run] ao entrar (RF-68).
+     */
+    fun begin() {
+        stopRequested = false
+    }
+
     /** Para as novas tentativas: desarmar, excluir contato ou o botão de parar. */
     fun stop() {
         stopRequested = true
@@ -42,7 +51,7 @@ object OpenLineCall {
      * excluído não recebe a próxima.
      */
     fun run(context: Context, store: Store) {
-        stopRequested = false
+        if (stopRequested) return
         if (EmergencySms.contacts(store).isEmpty()) return
         if (context.checkSelfPermission(Manifest.permission.CALL_PHONE) != PackageManager.PERMISSION_GRANTED) {
             EmergencySms.note(store, "ligação", "Rede de Apoio", "FALHOU: sem permissão de ligação")
