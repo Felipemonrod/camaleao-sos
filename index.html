@@ -3,113 +3,151 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Camaleão SOS · Demonstração</title>
-<meta name="description" content="Protótipo de hackathon: proteção discreta por voz, offline, para situações de violência doméstica.">
+<title>Camaleão SOS</title>
+<meta name="description" content="App Android que reconhece uma frase de segurança no próprio aparelho e avisa a rede de apoio. Protótipo acadêmico.">
 <style>
-  :root { --bg:#f4f7f2; --card:#ffffff; --ink:#17342d; --muted:#5b6f65; --green:#167a63; --soft:#e3ede0; --warn:#c4501e; --warnbg:#fff1e6; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#0f1a17; --card:#16241f; --ink:#e6f0eb; --muted:#9db3a8; --green:#3fbf98; --soft:#1f332c; --warn:#ff9a6b; --warnbg:#2a1c14; } }
+  :root { --bg:#f4f7f2; --card:#ffffff; --ink:#17342d; --muted:#5b6f65; --green:#167a63; --soft:#e3ede0; --warn:#c4501e; --warnbg:#fff1e6; --line:#d8e5d6; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1a17; --card:#16241f; --ink:#e6f0eb; --muted:#9db3a8; --green:#3fbf98; --soft:#1f332c; --warn:#ff9a6b; --warnbg:#2a1c14; --line:#24382f; } }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 920px; margin: 0 auto; padding: 24px 16px 48px; }
-  header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:28px; }
-  .brand { font-weight:800; font-size:22px; color:var(--green); }
-  .chip { font-size:12px; font-weight:700; letter-spacing:.06em; background:var(--soft); color:var(--green); padding:6px 10px; border-radius:999px; }
-  .hero { display:grid; grid-template-columns: 1.4fr 1fr; gap:28px; align-items:center; }
-  h1 { font-size: clamp(30px, 6vw, 46px); line-height:1.1; margin:0 0 14px; }
-  .lead { color:var(--muted); font-size:18px; margin:0 0 22px; }
-  .btn { display:inline-block; background:var(--green); color:#fff; text-decoration:none; font-weight:700; padding:14px 22px; border-radius:14px; }
-  .btn small { display:block; font-weight:500; opacity:.85; }
-  .qr { background:#fff; border-radius:20px; padding:18px; text-align:center; box-shadow:0 6px 24px rgba(0,0,0,.08); }
-  .qr img { width:100%; max-width:260px; height:auto; display:block; margin:0 auto; }
-  .qr p { color:#17342d; margin:10px 0 0; font-size:14px; }
-  section { margin-top:36px; }
-  h2 { font-size:24px; margin:0 0 14px; }
-  .card { background:var(--card); border-radius:20px; padding:20px 22px; margin-bottom:14px; }
-  ol { margin:0; padding-left:22px; } li { margin:6px 0; }
-  .grid { display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; }
-  .grid .card h3 { margin:0 0 6px; font-size:17px; }
-  .grid .card p { margin:0; color:var(--muted); font-size:15px; }
-  .warn { background:var(--warnbg); border-left:4px solid var(--warn); }
-  .warn strong { color:var(--warn); }
-  code { background:var(--soft); padding:2px 6px; border-radius:6px; font-size:.95em; }
-  table { width:100%; border-collapse:collapse; }
-  td { padding:8px 6px; vertical-align:top; border-top:1px solid var(--soft); }
-  td:first-child { width:42px; font-size:20px; }
-  footer { margin-top:40px; color:var(--muted); font-size:13px; word-break:break-word; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.65 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 28px 18px 56px; }
+  header { margin-bottom: 30px; }
+  .brand { font-weight:700; font-size:19px; color:var(--green); letter-spacing:-.01em; }
+  .sub { color:var(--muted); font-size:14px; margin-top:2px; }
+  h1 { font-size: clamp(26px, 5.4vw, 38px); line-height:1.15; margin:28px 0 12px; letter-spacing:-.02em; }
+  .lead { color:var(--muted); font-size:17px; margin:0 0 26px; }
+  .get { display:flex; gap:22px; align-items:center; flex-wrap:wrap; padding:20px; background:var(--card); border-radius:16px; }
+  .btn { display:inline-block; background:var(--green); color:#fff; text-decoration:none; font-weight:650; padding:13px 20px; border-radius:12px; }
+  .btn small { display:block; font-weight:400; opacity:.85; margin-top:2px; }
+  .qr img { width:124px; height:124px; display:block; background:#fff; border-radius:10px; padding:7px; }
+  section { margin-top:38px; }
+  h2 { font-size:21px; margin:0 0 12px; letter-spacing:-.01em; }
+  h3 { font-size:16px; margin:22px 0 6px; }
+  p { margin:0 0 14px; }
+  ol, ul { margin:0 0 14px; padding-left:20px; } li { margin:7px 0; }
+  .card { background:var(--card); border-radius:16px; padding:18px 20px; }
+  .warn { background:var(--warnbg); border-left:3px solid var(--warn); border-radius:0 12px 12px 0; padding:16px 18px; }
+  code, kbd { background:var(--soft); padding:2px 6px; border-radius:5px; font-size:.92em; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }
+  table { width:100%; border-collapse:collapse; font-size:15px; }
+  th, td { padding:9px 4px; vertical-align:top; border-top:1px solid var(--line); text-align:left; }
+  th { color:var(--muted); font-weight:600; font-size:13px; }
+  td:first-child { width:30%; }
+  footer { margin-top:46px; padding-top:18px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; word-break:break-word; }
   footer a { color:var(--green); }
-  @media (max-width: 720px) { .hero, .grid { grid-template-columns: 1fr; } .qr { display:none; } }
+  .hash { font-family:ui-monospace, SFMono-Regular, Menlo, monospace; font-size:11.5px; }
+  .note { margin:14px 0 0; color:var(--muted); font-size:14.5px; }
+  .note strong { color:var(--ink); }
+  @media (max-width: 560px) { .qr { display:none; } }
 </style>
 </head>
 <body>
 <main>
-  <header><span class="brand">◔ camaleão sos</span><span class="chip">PROTÓTIPO · HACKATHON</span></header>
 
-  <div class="hero">
-    <div>
-      <h1>Um pedido de ajuda que cabe numa frase.</h1>
-      <p class="lead">App Android disfarçado de calculadora. Ele reconhece uma <strong>frase secreta</strong> sem internet, dentro do próprio celular, e avisa a sua rede de apoio por SMS com a localização.</p>
-      <a class="btn" href="https://github.com/Felipemonrod/camaleao-sos/releases/download/v0.5.0-demo/Camaleao-SOS-0.5.0.apk">Baixar o app (Android)<small>versão 0.5.0 · 73 MB · Android 8 ou mais novo</small></a>
-    </div>
-    <div class="qr"><img src="qr.svg" alt="QR code para abrir esta página no celular"><p>Aponte a câmera do celular Android</p></div>
+<header>
+  <div class="brand">Camaleão SOS</div>
+  <div class="sub">Protótipo acadêmico · código aberto</div>
+</header>
+
+<h1>Pedir ajuda sem que ninguém na sala perceba.</h1>
+<p class="lead">Um app Android que se passa por calculadora. Armado, ele escuta uma frase que você escolheu — o reconhecimento acontece dentro do aparelho, sem mandar áudio para lugar nenhum — e avisa quem você cadastrou.</p>
+
+<div class="get">
+  <a class="btn" href="https://github.com/Felipemonrod/camaleao-sos/releases/download/v0.5.0-demo/Camaleao-SOS-0.5.0.apk">
+    Baixar o APK
+    <small>0.5.0 · 73 MB · Android 8+</small>
+  </a>
+  <div class="qr"><img src="qr.svg" alt="QR code para baixar o aplicativo"></div>
+</div>
+<p class="note"><strong>Só Android.</strong> Esta versão não roda em iPhone, e não há nada a instalar no iOS. O app é Kotlin nativo e depende de recursos que o iOS não dá a um aplicativo comum — escuta contínua em segundo plano e envio de SMS sem a pessoa tocar em enviar. A porta para o iOS está prevista na arquitetura, mas não foi feita.</p>
+
+<section>
+  <h2>O que ele faz</h2>
+  <p>Aberto, é uma calculadora que calcula. Um código digitado nela abre a área protegida; outro código dispara o alerta sem que a tela mude.</p>
+  <p>Na área protegida você grava uma frase de segurança e calibra a sua voz: lê a frase três vezes e lê uma frase parecida uma vez, para o app aprender a diferença entre as duas. Depois é só armar.</p>
+  <p>Armado, o app escuta. Reconhecida a frase, você diz uma palavra para escolher o que acontece — avisar os contatos por SMS, mandar a localização, gravar áudio ou ligar. Cada função tem a palavra que você quiser e pode ficar desligada.</p>
+  <p>O reconhecimento usa o <a href="https://alphacephei.com/vosk/">Vosk</a> com um modelo de português que vai dentro do APK. É por isso que ele tem 73 MB, e é por isso que funciona sem internet.</p>
+</section>
+
+<section>
+  <h2>Instalar</h2>
+  <ol>
+    <li>Toque em <strong>Baixar o APK</strong>. Se o navegador reclamar do arquivo, escolha baixar mesmo assim.</li>
+    <li>Abra o arquivo. O Android vai pedir permissão para instalar apps vindos do navegador — permita só para ele.</li>
+    <li>Se o Play Protect avisar sobre app desconhecido, toque em <strong>Mais detalhes</strong> e depois em <strong>Instalar mesmo assim</strong>.</li>
+    <li>O app aparece na lista como <strong>Cálculos</strong>.</li>
+  </ol>
+  <div class="warn">
+    <p><strong>Por que o Android desconfia.</strong> Este app não vem da Play Store, pede microfone, SMS e localização, e esconde a própria interface. É exatamente o perfil de um aplicativo espião — a diferença é quem está no controle. O código inteiro está no GitHub para quem quiser conferir antes de instalar.</p>
   </div>
+</section>
 
-  <section>
-    <h2>Como funciona</h2>
-    <div class="grid">
-      <div class="card"><h3>Fachada</h3><p>Aparece como “Cálculos” e calcula de verdade. Um código digitado abre a área protegida.</p></div>
-      <div class="card"><h3>Sentinela de voz offline</h3><p>Armada, ouve só a sua frase. Nenhum áudio sai do celular para reconhecer.</p></div>
-      <div class="card"><h3>Palavra por função</h3><p>Depois da frase, uma palavra escolhida: avisar contatos, mandar localização ou gravar.</p></div>
-    </div>
-  </section>
+<section>
+  <h2>Se o SMS ou a ligação não funcionarem</h2>
+  <p>Esse é o problema mais comum, e quase nunca é o app. A partir do Android 13, permissões de <strong>SMS</strong> e <strong>Telefone</strong> viram <em>configuração restrita</em> quando o aplicativo foi instalado fora da loja: elas aparecem acinzentadas, ou some a opção de conceder, e o sistema mostra um aviso como “o app não recebeu a seguinte permissão de acesso: SMS”.</p>
+  <p>O caminho para destravar:</p>
+  <ol>
+    <li>Segure o ícone de <strong>Cálculos</strong> e abra <strong>Informações do app</strong>.</li>
+    <li>Toque nos <strong>três pontos</strong>, no canto superior direito.</li>
+    <li>Escolha <strong>Permitir configurações restritas</strong>.</li>
+    <li>Volte em <strong>Permissões</strong> e conceda SMS e Telefone.</li>
+  </ol>
+  <p>A opção dos três pontos costuma só aparecer <em>depois</em> que a permissão foi negada uma vez. Se ela não estiver lá, abra o app, deixe o pedido de permissão aparecer, recuse, e volte.</p>
 
-  <section>
-    <h2>Instalar (sem modo desenvolvedor)</h2>
-    <div class="card">
-      <ol>
-        <li>Toque em <strong>Baixar o app</strong>. Se o navegador avisar sobre o arquivo, escolha <strong>Baixar mesmo assim</strong>.</li>
-        <li>Abra o arquivo baixado. O Android pede para <strong>permitir instalar apps desta fonte</strong>: permita só para o navegador.</li>
-        <li>Se o <strong>Play Protect</strong> avisar sobre app desconhecido, toque em <strong>Mais detalhes → Instalar mesmo assim</strong>. Explicamos o motivo abaixo.</li>
-        <li>O app aparece como <strong>Cálculos</strong>.</li>
-      </ol>
-    </div>
-    <div class="card warn">
-      <strong>Por que o Android pode alertar:</strong> o app não vem da Play Store e pede microfone, SMS e localização com uma tela disfarçada — o mesmo perfil de apps espiões. Aqui o disfarce protege quem pede ajuda. O código é público no GitHub, para quem quiser conferir.
-    </div>
-  </section>
+  <h3>Xiaomi, Redmi e POCO</h3>
+  <p>O MIUI/HyperOS tem uma camada própria além da do Android. Em <strong>Informações do app → Outras permissões</strong>, procure por envio de SMS e por chamadas. Há relatos de a opção de configurações restritas sumir depois de aparecer uma vez; reiniciar o aparelho costuma trazê-la de volta.</p>
 
-  <section>
-    <h2>Testar em 3 minutos</h2>
-    <div class="card">
-      <ol>
-        <li>Na calculadora, digite <code>2580</code> e toque em <code>=</code>.</li>
-        <li>Crie dois códigos diferentes de 6 a 12 dígitos: um abre a área protegida, o outro dispara o alerta sem sair da calculadora.</li>
-        <li>Mantenha a frase <strong>“Preciso buscar meu caderno azul”</strong> e calibre: leia-a 3 vezes e uma frase parecida 1 vez.</li>
-        <li>Em <strong>Rede de Apoio</strong>, cadastre um número seu de teste e autorize a comunicação.</li>
-        <li>Toque em <strong>Armar Sentinela</strong>, bloqueie a tela e diga a frase. Em até 6 segundos, diga <strong>“enviar alerta”</strong>.</li>
-      </ol>
-    </div>
-    <div class="card warn">
-      <strong>Antes de testar:</strong> o SMS sai do <strong>seu chip</strong>, para o número que <strong>você</strong> cadastrar, e fica na caixa de enviados. Nada é enviado aos desenvolvedores. Para remover tudo, desinstale “Cálculos”.
-    </div>
-  </section>
+  <h3>Motorola</h3>
+  <p>Mesmo caminho do Android puro. Se o alerta do sistema sobre permissão restrita aparecer e o menu dos três pontos não mostrar a opção, verifique se há uma atualização do sistema pendente.</p>
 
-  <section>
-    <h2>O que afirmamos, e o que não</h2>
-    <div class="card">
-      <table>
-        <tr><td>✅</td><td>Reconhecimento da frase <strong>no próprio aparelho</strong>, sem enviar áudio. Zero disparos em ~14 h de conversa sintética nos nossos testes.</td></tr>
-        <tr><td>✅</td><td>O app só diz “recebido” com recibo assinado. SMS aparece como “aceito pela operadora”, nunca como “entregue”.</td></tr>
-        <tr><td>⚠️</td><td>Com voz clara e de perto, a frase é reconhecida na maioria das vezes; com TV alta ou de longe, bem menos. Ainda medindo com vozes reais.</td></tr>
-        <tr><td>❌</td><td>Não funciona com o app fechado à força nem após reiniciar sem rearmar. Não aciona polícia ou serviços públicos. Não substitui o 190 ou o Ligue 180.</td></tr>
-      </table>
-    </div>
-  </section>
+  <h3>Conferir dentro do app</h3>
+  <p>Na área protegida há um diagnóstico que lista microfone, SMS, ligação, localização, notificação e economia de bateria, e diz qual está faltando no seu aparelho. Ele distingue três coisas que são fáceis de confundir: permissão não concedida, permissão bloqueada por configuração restrita, e recurso que o aparelho simplesmente não tem — um tablet sem chip, por exemplo, nunca vai mandar SMS.</p>
+  <p>Vale lembrar que o SMS sai do seu próprio chip. Se a operadora recusar o envio, o app registra a falha e não finge que deu certo.</p>
+</section>
 
-  <footer>
-    Protótipo acadêmico, sem fins comerciais. Em perigo imediato, ligue <strong>190</strong>. Violência contra a mulher: <strong>Ligue 180</strong>.<br>
-    Código: <a href="https://github.com/Felipemonrod/camaleao-sos">github.com/Felipemonrod/camaleao-sos</a> ·
-    SHA-256 do APK: <code>7789cc2f76ec585003e9b0284aa43520b70f8551f47a804445f1d1eaca8d460d</code>
-  </footer>
+<section>
+  <h2>Experimentar em alguns minutos</h2>
+  <ol>
+    <li>Na calculadora, digite <code>2580</code> e toque em <kbd>=</kbd>.</li>
+    <li>Crie dois códigos de 6 a 12 dígitos: um abre a área protegida, o outro dispara o alerta direto da calculadora.</li>
+    <li>Deixe a frase sugerida — “Preciso buscar meu caderno azul” — ou escolha a sua, e calibre: três leituras da frase e uma de algo parecido.</li>
+    <li>Em Rede de Apoio, cadastre um número <strong>seu</strong> e autorize a comunicação.</li>
+    <li>Arme a Sentinela, bloqueie a tela e diga a frase. Em seguida, diga “enviar alerta”. Na versão 0.5.0 a janela para a palavra é de 6 segundos.</li>
+  </ol>
+  <p>O SMS vai do seu chip para o número que você cadastrou e fica na caixa de enviados. Nada chega a quem fez o app. Para apagar tudo, desinstale o Cálculos.</p>
+</section>
+
+<section>
+  <h2>O que já foi medido, e o que não</h2>
+  <table>
+    <tr><th>Afirmamos</th><th>Com base em quê</th></tr>
+    <tr>
+      <td>A frase é reconhecida dentro do aparelho, sem áudio sair dele.</td>
+      <td>Zero disparos em ~14 h de conversa sintética nos nossos testes.</td>
+    </tr>
+    <tr>
+      <td>O app não diz “recebido” sem recibo assinado, e o SMS aparece como “aceito pela operadora”, nunca como “entregue”.</td>
+      <td>O Android não informa entrega ao remetente, então não temos como afirmar.</td>
+    </tr>
+    <tr>
+      <td>Com voz clara e de perto, a frase costuma ser reconhecida. Com TV alta ou de longe, bem menos.</td>
+      <td>Ainda não medido com um conjunto de vozes reais e sotaques.</td>
+    </tr>
+  </table>
+  <h3>O que ele não faz</h3>
+  <ul>
+    <li>Não existe versão para iPhone, nem está prevista para esta demonstração.</li>
+    <li>Não funciona com o app fechado à força, nem depois de reiniciar o celular sem rearmar.</li>
+    <li>Não aciona polícia nem qualquer serviço público. Não substitui o 190 nem o Ligue 180.</li>
+    <li>Não promete que a gravação tenha valor de prova. Ela é cifrada e rastreável, e isso é tudo o que afirmamos.</li>
+  </ul>
+</section>
+
+<footer>
+  <p>Protótipo acadêmico, sem fins comerciais. Em perigo imediato, ligue <strong>190</strong>. Violência contra a mulher: <strong>Ligue 180</strong>.</p>
+  <p>Código: <a href="https://github.com/Felipemonrod/camaleao-sos">github.com/Felipemonrod/camaleao-sos</a></p>
+  <p>SHA-256 do APK 0.5.0:<br><span class="hash">7789cc2f76ec585003e9b0284aa43520b70f8551f47a804445f1d1eaca8d460d</span></p>
+</footer>
+
 </main>
 </body>
 </html>
