@@ -696,3 +696,42 @@ envio — reiniciar o celular costuma resolver".
 ⚠️ **Não verificado:** se reiniciar o aparelho (ou alternar o modo avião) restabelece o
 envio. É o próximo passo óbvio e não foi feito — mexer no aparelho de terceiro além do
 necessário não estava autorizado.
+
+#### A causa no rádio: SMS sem IMS registrado, e fallback CS que falha
+
+O buffer `logcat -b radio` do Redmi Note 12, durante um envio da sonda:
+
+```
+RILJ: [1065]< SEND_SMS error 10 [PHONE0]
+RilRequest: [1065]< SEND_SMS error: CommandException: SMS_FAIL_RETRY
+ImsSmsDispatcher [0]: isAvailable: up=true, reg=false, cap=false
+GsmSMSDispatcher: sendSms: isIms()=false mRetryCount=1
+SmsMmsAnalytics: Type = SMS Outgoing Status = Failure RAT LTE
+                 Failure Reason = RESULT_RIL_SMS_SEND_FAIL_RETRY
+SmsMmsAnalyticsProvider: Updated Count = 101
+SMSDispatcher: SMS retry..
+```
+
+| Fato no log | Leitura |
+|---|---|
+| `ImsSmsDispatcher: reg=false, cap=false` | **o IMS não está registrado** — não há SMS sobre IMS/VoLTE |
+| `isIms()=false`, cai no `GsmSMSDispatcher` | o Android tenta o caminho CS (GSM) sobre LTE |
+| `SEND_SMS error 10` → `SMS_FAIL_RETRY` | o modem recusa e pede nova tentativa |
+| `SMSDispatcher: SMS retry..` e novo `> SEND_SMS` | o Android repete, e repete |
+| `Updated Count = 101` | o próprio aparelho já contabilizou 101 falhas de SMS |
+
+Isso explica as duas observações que pareciam contraditórias: o `RESULT_RIL_MODEM_ERR`
+(111) de uma execução e o silêncio de outra são o **mesmo** evento visto em momentos
+diferentes do ciclo de retentativa. Enquanto o Android repete, nenhum resultado final
+chega ao aplicativo — e a chamada fica pendurada.
+
+E explica 23/10: naquele dia 20 mensagens saíram deste chip pelo próprio Camaleão
+(`creator=br.com.camaleao.sos`). O que mudou não foi o aplicativo, foi o registro de IMS.
+
+**O que resolve, e é do aparelho, não do código:** ligar o VoLTE (chamadas 4G) nas
+configurações do chip, ou permitir 3G/2G na seleção de rede, para o SMS ter por onde
+sair. ⚠️ **Não verificado** — não foi feito, por ser configuração de rede do celular de
+terceiro, fora do que estava autorizado.
+
+**Nada neste diagnóstico aponta para o código do Camaleão.** O ciclo de modo avião não
+resolveu; ao contrário, trocou "falha com código" por "pendurado em retentativa".
