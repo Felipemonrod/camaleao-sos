@@ -666,3 +666,33 @@ vistos em tela.
 **Observação de método, para não se perder:** três horas de teste pela interface não
 responderam o que a sonda respondeu em dez minutos. Quando a pergunta é "o aparelho
 permite X?", o caminho curto é um programa que só faz X.
+
+#### Causa encontrada: o modem recusa o envio (`RESULT_RIL_MODEM_ERR`)
+
+A primeira sonda não trouxe resultado nenhum porque **ela** usava `FLAG_ONE_SHOT` no
+`PendingIntent`. Com `FLAG_UPDATE_CURRENT`, o resultado chegou — a afirmação anterior de
+que "o sistema não responde nada" era defeito da sonda, não do aparelho.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Sonda, `sendTextMessage` com texto "oi" | **`RESULTADO simples: codigo 111`** |
+| Sonda, `sendMultipartTextMessage` (1 parte) | **`RESULTADO multi0: codigo 111`** |
+| Significado de 111, conferido em `android.jar` da API 36 | **`SmsManager.RESULT_RIL_MODEM_ERR = 111`** |
+| Linhas na pilha de SMS depois dos dois envios | inalteradas (20) |
+| `creator` das 20 mensagens de 23/10 | **`br.com.camaleao.sos`**, `sub_id=1` |
+
+**Conclusão.** O envio falha no **rádio**, abaixo do Android e abaixo da camada do
+fabricante. Os dois métodos de envio falham igual, com e sem multipart, com texto curto.
+O `creator` prova que em 23/10 o próprio Camaleão enviou 20 mensagens por este mesmo chip:
+o código funcionava e funciona; o que mudou foi o estado do modem.
+
+Isso também descarta, em definitivo, as hipóteses de permissão do MIUI, de escolha de
+chip e de regressão entre versões — nenhuma delas chega ao rádio.
+
+**Correção acrescentada:** `EmergencySms.reason()` passa a traduzir os códigos 100+ do
+rádio. Antes, 111 cairia em `"código 111"`; agora diz "o modem do aparelho recusou o
+envio — reiniciar o celular costuma resolver".
+
+⚠️ **Não verificado:** se reiniciar o aparelho (ou alternar o modo avião) restabelece o
+envio. É o próximo passo óbvio e não foi feito — mexer no aparelho de terceiro além do
+necessário não estava autorizado.

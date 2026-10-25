@@ -33,7 +33,7 @@ class ProbeActivity : Activity() {
             say(view, "Faltou --es to \"+55...\"")
             return
         }
-        val text = "Teste do Camaleao SOS. Mensagem automatica de diagnostico."
+        val text = intent.getStringExtra("text") ?: "oi"
 
         val granted =
             checkSelfPermission(android.Manifest.permission.SEND_SMS) ==
@@ -48,22 +48,31 @@ class ProbeActivity : Activity() {
             if (android.os.Build.VERSION.SDK_INT >= 31) getSystemService(SmsManager::class.java)
             else @Suppress("DEPRECATION") SmsManager.getDefault()
 
-        val pending =
+        fun pending(tag: String) =
             PendingIntent.getBroadcast(
                 this,
-                1,
-                Intent(this, SentReceiver::class.java),
+                tag.hashCode(),
+                Intent(this, SentReceiver::class.java).putExtra("qual", tag),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
+
+        // Dois caminhos: o simples e o mesmo que o app usa. Se um sair e o outro não,
+        // a diferença está no método, não no aparelho.
         try {
-            // Parte única de propósito: menos variáveis que o multipart do app.
-            sms.sendTextMessage(to, null, text, pending, null)
-            Log.i(TAG, "sendTextMessage chamado para ${to.takeLast(4)}")
-            say(view, "Enviado ao Android. Veja o log SmsProbe.")
+            sms.sendTextMessage(to, null, text, pending("simples"), null)
+            Log.i(TAG, "simples: sendTextMessage chamado para ${to.takeLast(4)}")
         } catch (e: Exception) {
-            Log.i(TAG, "sendTextMessage lancou ${e.javaClass.simpleName}: ${e.message}")
-            say(view, "Excecao: ${e.javaClass.simpleName}")
+            Log.i(TAG, "simples: lancou ${e.javaClass.simpleName}: ${e.message}")
         }
+        try {
+            val parts = sms.divideMessage(text)
+            val intents = ArrayList(parts.indices.map { pending("multi$it") })
+            sms.sendMultipartTextMessage(to, null, parts, intents, null)
+            Log.i(TAG, "multi: sendMultipartTextMessage chamado, ${parts.size} parte(s)")
+        } catch (e: Exception) {
+            Log.i(TAG, "multi: lancou ${e.javaClass.simpleName}: ${e.message}")
+        }
+        say(view, "Dois envios entregues ao Android. Veja o log SmsProbe.")
     }
 
     private fun say(view: TextView, message: String) {
@@ -89,6 +98,6 @@ class SentReceiver : BroadcastReceiver() {
                 SmsManager.RESULT_ERROR_LIMIT_EXCEEDED -> "LIMIT_EXCEEDED"
                 else -> "codigo $resultCode"
             }
-        Log.i(ProbeActivity.TAG, "RESULTADO: $motivo")
+        Log.i(ProbeActivity.TAG, "RESULTADO ${intent.getStringExtra("qual")}: $motivo")
     }
 }

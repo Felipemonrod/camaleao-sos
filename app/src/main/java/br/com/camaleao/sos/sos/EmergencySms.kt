@@ -156,6 +156,17 @@ object EmergencySms {
             SmsManager.RESULT_ERROR_LIMIT_EXCEEDED -> "limite de envio do sistema"
             SmsManager.RESULT_ERROR_SHORT_CODE_NOT_ALLOWED,
             SmsManager.RESULT_ERROR_SHORT_CODE_NEVER_ALLOWED -> "número curto bloqueado"
+            // Códigos 100+ vêm do rádio, abaixo do Android. Medidos num Redmi Note 12 que
+            // recusava todo SMS enquanto ligação e dados funcionavam (docs/09, 25/10).
+            SmsManager.RESULT_RIL_MODEM_ERR,
+            SmsManager.RESULT_RIL_INVALID_MODEM_STATE ->
+                "o modem do aparelho recusou o envio — reiniciar o celular costuma resolver"
+            SmsManager.RESULT_RIL_INVALID_SMSC_ADDRESS ->
+                "central de mensagens (SMSC) inválida — confira nas configurações do chip"
+            SmsManager.RESULT_RIL_NETWORK_REJECT -> "a operadora recusou o envio"
+            SmsManager.RESULT_RIL_RADIO_NOT_AVAILABLE -> "rádio indisponível"
+            SmsManager.RESULT_RIL_REQUEST_RATE_LIMITED -> "limite de envio do rádio"
+            SmsManager.RESULT_RIL_SYSTEM_ERR -> "erro de sistema no rádio"
             else -> "código $code"
         }
 
