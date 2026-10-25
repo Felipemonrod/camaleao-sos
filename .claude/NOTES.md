@@ -500,3 +500,16 @@ consumindo o pedido de quem está no ar — é real, mas não era este defeito.
 A suíte principal logo depois falha no teste da Activity com `Activity never becomes
 requested state "[RESUMED]"`. É a tela, não o código. Entre uma bateria e outra, alguém
 precisa destravar.
+
+## 2026-10-25 — revisão da PR #4 e release 0.6.0
+
+Revisão da PR #4 antes do APK. Defeito corrigido: o diagnóstico de compatibilidade só
+reconhecia instalação fora da loja pelos instaladores do Google/AOSP, e no Xiaomi
+(`com.miui.packageinstaller`) escondia o caminho da configuração restrita, justamente o
+caso que motivou a tela. Agora a regra é por lista de lojas (`InstallSource`). Pontos
+anotados sem mudança: a releitura da mesma fala (RF-69) usa a primeira ocorrência da
+frase no Buffer de 8 s, então duas frases em 8 s com uma função depois da primeira podem
+disparar de novo na segunda; o `gap_s` não soma o trecho final se a gravação acabar
+durante a ligação; e, se o Android entregar silêncio (zeros) ao cliente silenciado em vez
+de erro, o corte vira silêncio no arquivo e o `gap_s` fica 0. Nenhum dos três foi medido.
+

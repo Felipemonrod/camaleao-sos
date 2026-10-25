@@ -310,3 +310,17 @@ não foi feita. É o que condiciona o status do ADR 0015.
 desconectado antes), o diagnóstico numa tela de Motorola ou Xiaomi, o efeito da janela
 longa sobre falso alarme, e a publicação da página, que não foi feita sem aval. Sem
 atribuição de IA em commit ou PR (AGENTS.md R10).
+
+## 2026-10-25 — Revisão da PR #4 e APK 0.6.0 com Claude Code
+
+**Solicitação humana:** analisar as implementações novas, esperar a última PR e publicar
+o APK novo na página.
+
+**Trabalho realizado:** revisão da PR #4. A IA achou um defeito na detecção de
+instalação fora da loja (Xiaomi não reconhecido), corrigiu-o com um teste e anotou três
+riscos não medidos nas NOTES. Depois gerou o APK 0.6.0 assinado, publicou a pré-release e
+atualizou a página.
+
+**Revisão humana necessária:** a tela de Compatibilidade num Xiaomi real e os três
+riscos anotados.
+

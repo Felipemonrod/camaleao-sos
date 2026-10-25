@@ -580,3 +580,19 @@ em nenhuma das 10 execuções seguintes. A instrumentação da releitura fica no
 efeito da janela de 30 s sobre falso alarme; o `gap_s` numa ligação real; e tudo isto em
 APK de release — a chave de assinatura não está neste notebook, então a página pública
 continua entregando a 0.5.0.
+
+### Execução de 25/10/2026 — instalação fora da loja reconhecida em qualquer fabricante
+
+Na revisão da PR #4: `Compatibility.sideloaded` só reconhecia os instaladores do Google e
+do AOSP. Um APK aberto pelo instalador do Xiaomi (`com.miui.packageinstaller`) era
+tratado como vindo de loja, e o diagnóstico e o registro de SMS mostravam "permissão
+negada" em vez do caminho de "Permitir configurações restritas". A regra passou a ser
+por lista de lojas (`domain/InstallSource`).
+
+| Verificação executada | Resultado observado |
+|---|---|
+| `FunctionsTest.anyInstallerOutsideAStoreCountsAsSideloaded` | aprovado: instaladores do Xiaomi, do Google, do AOSP e da Samsung e instalação sem instalador (adb) contam como fora da loja; Play e Galaxy Store, não |
+| Compilação, testes unitários e Lint | aprovados |
+
+**Falta:** ver a tela de Compatibilidade num Xiaomi de verdade com o APK da página.
+

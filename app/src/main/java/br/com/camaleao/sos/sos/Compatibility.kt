@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.PowerManager
 import android.telephony.TelephonyManager
+import br.com.camaleao.sos.domain.InstallSource
 
 /**
  * Diagnóstico de compatibilidade do aparelho (RF-72). Instalado fora da loja, o Android
@@ -48,8 +49,7 @@ object Compatibility {
                     context.packageManager.getInstallSourceInfo(context.packageName)
                         .installingPackageName
                 else null
-            installer == null || installer == "com.google.android.packageinstaller" ||
-                installer == "com.android.packageinstaller"
+            InstallSource.sideloaded(installer)
         }
             .getOrDefault(true)
 
