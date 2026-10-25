@@ -469,3 +469,34 @@ A reprodução ainda não aconteceu com a instrumentação no ar: a bateria segu
 antes de começar porque o `ScreenOffTest` da rodada anterior deixou o aparelho
 bloqueado, e o bloqueio é seguro. Rodar de novo exige a tela destravada por quem tem a
 senha.
+
+## 2026-10-25 (noite) — a causa da gravação que não fechava
+
+Duas intermitências, uma resolvida.
+
+**Resolvida.** `ScreenOffTest` falhava com `expected:<[CONCLUIDA]> but was:<[GRAVANDO]>`,
+3 vezes em 6. O log do gravador mostrou que a parada acontecia no registro certo — então
+o problema não era a parada, era a ordem. O `stop()` zerava `LiveState.recording` antes
+do `update()`, e entre os dois há o fechamento AES-GCM e um SHA-256 do arquivo inteiro.
+Quem esperava o fim lia `recording == false` com o registro ainda em `GRAVANDO`.
+
+O defeito é antigo; o pré-rolo de 8 s do RF-70 triplicou o arquivo e tornou a janela
+grande o bastante para aparecer. Depois da correção: **8 em 8**.
+
+A lição que vale guardar: `LiveState` é promessa para a tela. Zerar um estado antes de o
+registro refletir a realidade é a mesma classe de erro que o produto proíbe no alerta —
+dizer que acabou antes de ter acabado.
+
+**Aberta.** A falha única do RF-69 não reproduziu em mais nenhuma das 9 execuções
+seguintes. A instrumentação ficou: quando a releitura não acha o comando, o log diz se a
+frase não foi localizada ou se não havia comando depois dela, com contagem de palavras
+(nunca texto, RF-52).
+
+**Guarda que não era a causa.** `current === session` nos pedidos da tela foi acrescentada
+na hipótese errada e ficou: o risco que ela descreve — thread de sessão encerrada
+consumindo o pedido de quem está no ar — é real, mas não era este defeito.
+
+**Armadilha de bancada:** o `ScreenOffTest` deixa a tela bloqueada e o bloqueio é seguro.
+A suíte principal logo depois falha no teste da Activity com `Activity never becomes
+requested state "[RESUMED]"`. É a tela, não o código. Entre uma bateria e outra, alguém
+precisa destravar.

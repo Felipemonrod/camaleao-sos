@@ -510,3 +510,45 @@ sente.
 real, em qualquer aparelho — a tela é alcançável só pela Área protegida, com o código da
 usuária; o efeito da janela de 30 s sobre falso alarme; a parada da gravação durante uma
 ligação real.
+
+### Execução de 25/10/2026 (noite) — a intermitência da gravação, com causa
+
+A instrumentação pedida pelo responsável achou a causa de uma das duas
+intermitências. A outra continua aberta.
+
+**Reproduzida e corrigida: `ScreenOffTest` com `expected:<[CONCLUIDA]> but was:<[GRAVANDO]>`.**
+
+| Verificação executada | Resultado observado |
+|---|---|
+| `ScreenOffTest`, antes da correção | **3 falhas em 6 execuções** |
+| Log do gravador numa execução que falhou | `start(manual): id=337ff392 preroll=8s` seguido de `stop(parada pela usuária): id=337ff392` — a parada **aconteceu**, no registro certo |
+| `ScreenOffTest`, depois da correção | **8 aprovações em 8 execuções** |
+| Testes unitários e Lint | aprovados |
+
+**Causa.** O `stop()` zerava `LiveState.recording` **antes** de escrever o estado final
+no registro. Entre as duas coisas há o fechamento do bloco corrente em AES-GCM e um
+SHA-256 sobre o arquivo inteiro. Quem espera o fim da gravação — a tela, ou o teste —
+via `recording == false` e lia um registro que ainda dizia `GRAVANDO`. O pré-rolo de 8 s
+do RF-70 triplicou o tamanho do arquivo e, com ele, essa janela: o defeito era antigo, a
+mudança de ontem é que o tornou frequente.
+
+A correção põe `LiveState.recording = false` depois do `update()`. O estado passa a
+significar o que diz: gravação fechada no registro.
+
+**Guarda acrescentada por hipótese errada, mantida por mérito próprio.** Antes de achar
+a causa, a suspeita foi outra: os pedidos da tela (`stopRecording`, `recordRequest`,
+`cancelCommand`) são globais e cada sessão de captura tem o seu gravador, então uma
+thread de sessão encerrada podia consumir o pedido de quem está no ar. A guarda
+`current === session` foi acrescentada e **não** resolveu a intermitência (3 falhas em 6
+depois dela). Fica porque o risco que ela descreve é real, não porque conserta isto.
+
+**Continua sem explicação: a falha única do RF-69** (`functionInTheSameBreathFiresWithoutTheWindow`,
+`expected:<[ALERT]> but was:<[]>`). Não reproduziu em nenhuma das execuções desde então
+— 3 isoladas, 5 da suíte principal, 1 do `validar.ps1` completo. O registro de
+diagnóstico ficou no lugar: quando a releitura não acha o comando, o log diz se foi
+"frase não localizada" ou "sem comando depois da frase", com contagem de palavras. Se
+voltar a acontecer, o log diz qual dos dois é.
+
+**Observação de ambiente:** o `ScreenOffTest` deixa o aparelho bloqueado e o bloqueio é
+seguro. Rodar a suíte principal logo depois faz o teste da Activity falhar com
+`Activity never becomes requested state "[RESUMED]"` — é a tela travada, não defeito.

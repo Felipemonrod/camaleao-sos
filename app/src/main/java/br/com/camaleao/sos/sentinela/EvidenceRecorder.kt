@@ -45,6 +45,14 @@ class EvidenceRecorder(private val context: Context, private val store: Store) {
     val active
         get() = out != null
 
+    /** Só em build debug, e só estado — nunca áudio nem transcrição (RF-52). */
+    private fun log(event: String) {
+        if (
+            (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        )
+            android.util.Log.i("CamaleaoGrav", event)
+    }
+
     /**
      * Começa uma gravação; se já houver uma, apenas estende o prazo. [before] é o Buffer
      * pré-evento e entra como primeiro trecho, para o arquivo não começar depois do
@@ -54,6 +62,7 @@ class EvidenceRecorder(private val context: Context, private val store: Store) {
         if (active) {
             before?.fill(0)
             until = maxOf(until, now + durationMs)
+            log("start($origin): já ativa, prazo estendido")
             return true
         }
         return try {
@@ -87,8 +96,10 @@ class EvidenceRecorder(private val context: Context, private val store: Store) {
             }
             LiveState.recording = true
             LiveState.changed()
+            log("start($origin): id=${id.take(8)} preroll=${preroll / RATE}s")
             true
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            log("start($origin): falhou ${e.javaClass.simpleName}")
             stop("falha ao iniciar")
             false
         }
@@ -155,11 +166,13 @@ class EvidenceRecorder(private val context: Context, private val store: Store) {
     fun stop(reason: String) {
         val stream = out
         out = null
-        LiveState.recording = false
         if (stream == null) {
+            log("stop($reason): nada ativo neste gravador")
+            LiveState.recording = false
             LiveState.changed()
             return
         }
+        log("stop($reason): id=${id.take(8)}")
         var state = "CONCLUIDA"
         try {
             flush(stream)
@@ -182,6 +195,10 @@ class EvidenceRecorder(private val context: Context, private val store: Store) {
         key = null
         digest = null
         pending.reset()
+        // Só aqui, depois de o registro estar fechado. Zerar antes faz a tela — e quem
+        // espera o fim da gravação — ler um estado que ainda diz GRAVANDO. O fechamento
+        // cifra o resto e passa SHA-256 no arquivo inteiro, então a janela não é curta.
+        LiveState.recording = false
         LiveState.changed()
     }
 

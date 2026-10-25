@@ -201,8 +201,11 @@ class SentinelaService : Service() {
                 val elapsed = SystemClock.elapsedRealtime()
                 // O prazo da gravação corre mesmo sem captura (RF-71).
                 evidence.tick(elapsed)
-                // Parar vale mesmo sem captura: senão o botão não responde durante a ligação.
-                if (LiveState.stopRecording) {
+                // Os pedidos da tela são globais e cada sessão tem o seu gravador: uma
+                // thread de sessão encerrada não pode consumir o "parar gravação" de quem
+                // está no ar, senão o pedido some sem nada acontecer.
+                val owner = current === session
+                if (owner && LiveState.stopRecording) {
                     LiveState.stopRecording = false
                     evidence.stop("parada pela usuária")
                 }
@@ -212,11 +215,11 @@ class SentinelaService : Service() {
                     continue
                 }
                 check(count > 0) { "Captura interrompida" }
-                if (LiveState.cancelCommand) {
+                if (owner && LiveState.cancelCommand) {
                     engine.cancel()
                     LiveState.cancelCommand = false
                 }
-                if (LiveState.recordRequest) {
+                if (owner && LiveState.recordRequest) {
                     LiveState.recordRequest = false
                     if (!test)
                         evidence.start(
