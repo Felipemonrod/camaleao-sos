@@ -9,7 +9,7 @@ try {
     if (-not $voice) { throw 'Instale uma voz de texto para fala pt-BR no Windows para gerar as amostras.' }
     $synth.SelectVoice($voice.VoiceInfo.Name)
     $format = New-Object System.Speech.AudioFormat.SpeechAudioFormatInfo(16000,[System.Speech.AudioFormat.AudioBitsPerSample]::Sixteen,[System.Speech.AudioFormat.AudioChannel]::Mono)
-    foreach ($clip in @(@{Name='frase';Text='Preciso buscar meu caderno azul'},@{Name='negativo';Text='Vou buscar meu caderno azul'},@{Name='comando';Text='Enviar alerta'},@{Name='carro';Text='Preciso buscar meu carro azul'},@{Name='contexto';Text='Olha, preciso buscar meu caderno azul agora'},@{Name='localizacao';Text='Compartilhar localização'},@{Name='gravar';Text='Gravar evidência'})) {
+    foreach ($clip in @(@{Name='frase';Text='Preciso buscar meu caderno azul'},@{Name='negativo';Text='Vou buscar meu caderno azul'},@{Name='comando';Text='Enviar alerta'},@{Name='carro';Text='Preciso buscar meu carro azul'},@{Name='contexto';Text='Olha, preciso buscar meu caderno azul agora'},@{Name='localizacao';Text='Compartilhar localização'},@{Name='gravar';Text='Gravar evidência'},@{Name='mesmafala';Text='Preciso buscar meu caderno azul enviar alerta'},@{Name='antes';Text='Enviar alerta preciso buscar meu caderno azul'})) {
         $synth.SetOutputToWaveFile((Join-Path $destination ($clip.Name + '.wav')), $format)
         $synth.Speak($clip.Text)
     }

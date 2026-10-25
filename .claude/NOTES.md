@@ -358,3 +358,41 @@ Em 22/10 o S25 alcançou o Painel pelo hotspot numa rede classificada como **Pú
 com a regra de firewall valendo só em Privada e sem nenhuma outra regra encontrada para
 a porta 8443 ou para o `node.exe`. O alcance é fato (`HTTP 200` pedido do aparelho); a
 explicação não. Na banca, se não conectar, marcar a rede do hotspot como Privada.
+
+## 2026-10-25 — RF-69 comprovado no S25 e o limite da chave de release
+
+Bateria completa no S25 com o APK debug do commit `3302845`: 25 unitários, 21 do Painel,
+`OK (17 tests)` nos instrumentados e `OK (2 tests)` no `ScreenOffTest`. Detalhes em
+[docs/09](../docs/09-plano-de-testes.md#registro-de-execução).
+
+O que mudou de status: a função dita **na mesma fala** da frase agora tem prova no motor
+real, em aparelho real — `ALERT` disparou e a `COMMAND_WINDOW` não abriu. A amostra
+contrária (palavra antes da frase) também passou: nada disparou. Voz sintética, não
+pessoa.
+
+Duas armadilhas de ambiente que custaram uma bateria cada:
+
+- Os `.wav` de `app/src/androidTest/assets` são ignorados pelo Git e não existiam neste
+  notebook: 3 testes falharam com `FileNotFoundException` até rodar
+  `tools/gerar-amostras.ps1`. Vale rodar o gerador **antes** da primeira bateria em
+  máquina nova.
+- O `ScreenOffTest` termina deixando o aparelho bloqueado, e o `validar.ps1` se recusa a
+  começar bloqueado. Duas baterias seguidas exigem desbloquear no meio.
+
+Para instalar o debug foi preciso desinstalar a release 0.5.0 (assinaturas diferentes,
+mesmo `applicationId`). O responsável autorizou desinstalar a antiga e instalar a nova
+quando for necessário.
+
+**O limite que decide a apresentação:** a chave de assinatura não está neste notebook
+(`release.jks` e `keystore.properties` ausentes). A 0.5.0 da página **não contém** o
+ADR 0014. Levar estas melhorias à banca exige dar merge no PR #4 e gerar a 0.6.0 no PC
+que tem a chave, republicando a página com o SHA-256 novo.
+
+Auto-fix ligado no PR #4 (CI verde, `MERGEABLE`/`CLEAN`).
+
+Pergunta do responsável, respondida sem implementar: **enviar o áudio por SMS** para a
+prova não morrer com o aparelho. Não cabe — SMS carrega 140 bytes por parte e nem o
+multipart chega perto de um minuto de áudio; MMS caberia, mas exige dados móveis, custo
+e ser o app de SMS padrão, e o chip do S25 já recusa SMS comum. O caminho que o projeto
+já tem para isso é subir a evidência ao Painel pelo transporte HTTPS com fila e recibo
+(RF-43, RF-45). Isso é decisão nova e mexe com J1 e com o docs/07: não foi feito.

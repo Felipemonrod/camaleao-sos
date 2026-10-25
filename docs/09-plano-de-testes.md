@@ -396,3 +396,40 @@ funcionaram. O relato **não foi conferido aqui**; o que segue é leitura de có
 | Chamada recusada pelo destinatário | o modo de chamada cai antes dos 40 s, o registro vira `SEM RESPOSTA (rodada n)` e a rodada seguinte acontece. Comportamento correto no código; **continua sem prova em aparelho** |
 | Teto de 30 min do RF-68 | ⚠️ `going()` só é testado entre chamadas e cada chamada pode durar 15 min: o total pode passar de 30 min. Não corrigido — mudar a temporização do laço sem aparelho é risco maior que o desvio |
 | Sentinela durante a ligação | ⚠️ o microfone é da chamada por até 15 min: a frase e o `cancelar` por voz **não funcionam** nesse intervalo. Já era assim; agora está escrito no ADR 0014 |
+
+### Execução de 25/10/2026 — RF-69 no S25, com motor real e voz sintética
+
+`tools/validar.ps1 -Serial <S25>` no Galaxy S25 (SM-S931B), APK **debug** do commit
+`3302845`, Painel local pelo cabo (`adb reverse`, `https://127.0.0.1:8443`). A release
+0.5.0 foi desinstalada pelo responsável: assinaturas diferentes impedem instalar o debug
+por cima (`INSTALL_FAILED_UPDATE_INCOMPATIBLE`).
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Compilação debug, Lint e testes unitários | aprovados; **25 testes unitários** |
+| Testes do Painel (Node) | **21 aprovados, 0 falhas** |
+| Instrumentados no S25 (`CompleteFlowTest` + `GrammarProbeTest`) | **`OK (17 tests)`** em 44 s: 15 executados e 2 ignorados por regra (alternar rede só em emulador; SMS sem número autorizado) |
+| `ScreenOffTest` | **`OK (2 tests)`** em 9,5 s |
+| **RF-69 — frase e função numa tirada só** (`mesmafala.wav`) | **aprovado no motor real**: a função disparou `ALERT` e a `COMMAND_WINDOW` **não chegou a abrir** |
+| **RF-69 — função dita antes da frase** (`antes.wav`) | **aprovado**: nada disparou e a janela abriu normalmente |
+
+As amostras `mesmafala.wav` ("Preciso buscar meu caderno azul enviar alerta") e
+`antes.wav` ("Enviar alerta preciso buscar meu caderno azul") foram acrescentadas a
+`tools/gerar-amostras.ps1`. Os `.wav` são ignorados pelo Git e precisam ser gerados em
+cada máquina — neste notebook não existiam, e a primeira bateria falhou com
+`FileNotFoundException: frase.wav` em 3 testes antes de serem gerados.
+
+**O que esta execução prova e o que não prova.** Prova que a releitura com gramática
+combinada encontra a função falada junto com a frase, no Vosk real, no aparelho real, e
+que a regra de posição recusa a palavra dita antes. Os 44 s da suíte incluem a terceira
+leitura sem nenhum `Captura interrompida`, mas isso **não** é a medição do custo em
+tempo pedida: o teste alimenta PCM em laço, não lê de `AudioRecord` com prazo real.
+
+Continua **não verificado**:
+
+- a função na mesma fala em **voz de pessoa**, e não sintetizada;
+- o custo da terceira leitura na thread de captura com a Sentinela armada de verdade;
+- o pré-rolo (`preroll_s`) num arquivo de evidência exportado e conferido por hash;
+- o `gap_s` durante uma ligação real;
+- tudo isso em APK de **release**: a chave de assinatura não está neste notebook, então
+  a 0.5.0 publicada na página **não contém** nada deste ADR.

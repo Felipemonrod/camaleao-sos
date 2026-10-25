@@ -251,3 +251,31 @@ voz real na mesma fala, o custo em tempo da terceira leitura na thread de captur
 pré-rolo no arquivo exportado, o `gap_s` numa ligação real, e tudo isso no APK de
 release. O relato do colega continua sendo relato: não foi conferido aqui. Sem
 atribuição de IA em commit ou PR (AGENTS.md R10).
+
+## 2026-10-25 — Prova em aparelho do RF-69 com Claude Code
+
+**Solicitação humana:** explicar o Auto-fix do PR, testar no S25 já conectado, subir as
+alterações e dizer se o app pode ser apresentado como está. O responsável também
+perguntou se daria para enviar o áudio por SMS, para a prova não se perder com o
+aparelho.
+
+**Trabalho realizado:** a IA descobriu que as amostras sintéticas de
+`app/src/androidTest/assets` são ignoradas pelo Git e não existiam neste notebook — três
+testes falhavam por arquivo ausente, e não por defeito. Gerou as amostras, acrescentou
+duas novas ao `tools/gerar-amostras.ps1` (frase e função numa tirada só, e a palavra
+dita antes da frase) e escreveu dois testes instrumentados para o RF-69, que passaram no
+motor Vosk real no S25: a função disparou sem a janela de comando abrir, e a palavra
+anterior à frase não disparou nada.
+
+A IA respondeu à pergunta do SMS com áudio sem implementar: o limite de carga do SMS
+inviabiliza, o MMS exige dados e ser o app padrão de mensagens, e o caminho que o
+projeto já tem é subir a evidência ao Painel. Apontou que isso é decisão nova e esbarra
+na pendência jurídica J1, então parou e devolveu ao responsável (AGENTS.md §5).
+
+Também registrou o limite que decide a apresentação: sem a chave de assinatura neste
+notebook, o APK 0.5.0 da página não contém nenhuma das melhorias destes dois dias.
+
+**Revisão humana necessária:** a função na mesma fala em voz de pessoa, o custo em tempo
+da terceira leitura com a Sentinela armada, o pré-rolo num arquivo exportado, o `gap_s`
+numa ligação real, e a geração da 0.6.0 no PC que tem a chave. Sem atribuição de IA em
+commit ou PR (AGENTS.md R10).
