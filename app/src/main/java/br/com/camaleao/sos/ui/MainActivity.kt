@@ -241,9 +241,10 @@ class MainActivity : ComponentActivity() {
         heartbeat = null
         phase = null
         sample = null
-        if (page == "calculator" || presenting)
-            window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        else window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        // Print e gravação de tela liberados em todas as telas, a pedido do responsável,
+        // para a apresentação (0.6.3). Custo: a Área protegida aparece em capturas e na
+        // lista de recentes; ver docs/07.
+        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         root =
             LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL

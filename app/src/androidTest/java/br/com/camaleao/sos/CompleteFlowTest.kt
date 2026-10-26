@@ -372,8 +372,6 @@ class CompleteFlowTest {
     }
 
     private fun screenshot(s: ActivityScenario<MainActivity>, name: String) {
-        // Apenas o teste remove FLAG_SECURE para capturar telas sem dados pessoais.
-        s.onActivity { it.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE) }
         inst.waitForIdleSync()
         Thread.sleep(800)
         val dir = File(context.getExternalFilesDir(null), "screenshots-v2").apply { mkdirs() }
@@ -392,9 +390,10 @@ class CompleteFlowTest {
             s.onActivity { assertNotNull(find(it.window.decorView, "14")) }
             click(s, "C")
             for (key in listOf("1", "2", "3", "4", "5", "6", "=")) click(s, key)
+            // Desde a 0.6.3 a Área protegida não bloqueia print nem gravação de tela.
             s.onActivity {
                 assertTrue(
-                    it.window.attributes.flags and WindowManager.LayoutParams.FLAG_SECURE != 0
+                    it.window.attributes.flags and WindowManager.LayoutParams.FLAG_SECURE == 0
                 )
             }
             screenshot(s, "02-area-protegida")

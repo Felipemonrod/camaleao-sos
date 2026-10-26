@@ -174,7 +174,9 @@ segredo: **o vínculo exigido em C4 ainda não foi entregue**. O recebimento em
 background usa a chave do Keystore sem pedir novo código. Isso mantém a fila
 autônoma, mas deixa essa parte do hardening pendente; não foi declarada conforme.
 
-A Área protegida usa `FLAG_SECURE`, volta à Fachada limpa ao sair do aplicativo e
+Desde a 0.6.3, a pedido do responsável para a apresentação, a Área protegida **não**
+usa mais `FLAG_SECURE`: aparece em print, gravação de tela e na lista de recentes. Ela
+volta à Fachada limpa ao sair do aplicativo e
 mostra Ocorrências somente mediante navegação explícita. A exportação pede ação e
 confirmação e gera arquivo potencialmente sensível. Excluir recebidas remove as
 linhas locais e mantém o encadeamento; não promete apagamento físico da memória
