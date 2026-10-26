@@ -56,9 +56,10 @@ object EmergencySms {
         }
         val sms = manager(context)
         var started = 0
+        val waiting = mutableListOf<String>()
         for (c in contacts(store)) {
             val id = UUID.randomUUID().toString()
-            log(store, id, reason, c.getString("name"), "PENDENTE")
+            log(store, id, reason, c.getString("name"), PENDING)
             try {
                 val parts = sms.divideMessage(text)
                 val sent =
@@ -73,14 +74,47 @@ object EmergencySms {
                         }
                     )
                 sms.sendMultipartTextMessage(c.getString("phone"), null, parts, sent, null)
+                waiting += id
                 started++
             } catch (e: Exception) {
                 update(store, id, "FALHOU: ${e.javaClass.simpleName}")
             }
         }
+        // Há aparelho que aceita a chamada, contabiliza a permissão e engole a mensagem
+        // sem devolver resultado nenhum. Sem este prazo o registro fica PENDENTE para
+        // sempre, e PENDENTE eterno se parece com sucesso (RF-57).
+        if (waiting.isNotEmpty())
+            LiveState.main.postDelayed({ expirePending(store, waiting) }, NO_RESULT_MS)
         LiveState.changed()
         return started
     }
+
+    /** Prazo para o Android responder ao envio. */
+    const val NO_RESULT_MS = 30_000L
+
+    const val NO_RESULT =
+        "FALHOU: sem resposta do sistema em 30 s — o aparelho pode estar bloqueando o " +
+            "envio automático. Use “Revisar SMS para um participante”."
+
+    /** O que continuou PENDENTE virou falha: silêncio não é entrega. */
+    @Synchronized
+    fun expirePending(store: Store, ids: List<String>) {
+        val a = JSONArray(store.get(LOG, "[]"))
+        var changed = false
+        for (i in 0 until a.length()) {
+            val o = a.getJSONObject(i)
+            if (o.getString("id") in ids && o.getString("status") == PENDING) {
+                o.put("status", NO_RESULT)
+                changed = true
+            }
+        }
+        if (changed) {
+            store.put(LOG, a.toString())
+            LiveState.changed()
+        }
+    }
+
+    const val PENDING = "PENDENTE"
 
     /** Registro avulso, para ligações e falhas que não chegam a virar SMS. */
     fun note(store: Store, reason: String, to: String, status: String) {
@@ -122,6 +156,17 @@ object EmergencySms {
             SmsManager.RESULT_ERROR_LIMIT_EXCEEDED -> "limite de envio do sistema"
             SmsManager.RESULT_ERROR_SHORT_CODE_NOT_ALLOWED,
             SmsManager.RESULT_ERROR_SHORT_CODE_NEVER_ALLOWED -> "número curto bloqueado"
+            // Códigos 100+ vêm do rádio, abaixo do Android. Medidos num Redmi Note 12 que
+            // recusava todo SMS enquanto ligação e dados funcionavam (docs/09, 25/10).
+            SmsManager.RESULT_RIL_MODEM_ERR,
+            SmsManager.RESULT_RIL_INVALID_MODEM_STATE ->
+                "o modem do aparelho recusou o envio — reiniciar o celular costuma resolver"
+            SmsManager.RESULT_RIL_INVALID_SMSC_ADDRESS ->
+                "central de mensagens (SMSC) inválida — confira nas configurações do chip"
+            SmsManager.RESULT_RIL_NETWORK_REJECT -> "a operadora recusou o envio"
+            SmsManager.RESULT_RIL_RADIO_NOT_AVAILABLE -> "rádio indisponível"
+            SmsManager.RESULT_RIL_REQUEST_RATE_LIMITED -> "limite de envio do rádio"
+            SmsManager.RESULT_RIL_SYSTEM_ERR -> "erro de sistema no rádio"
             else -> "código $code"
         }
 

@@ -324,3 +324,47 @@ atualizou a página.
 **Revisão humana necessária:** a tela de Compatibilidade num Xiaomi real e os três
 riscos anotados.
 
+
+## 2026-10-25 (noite) — Investigação do SMS no Redmi com Claude Code
+
+**Solicitação humana:** descobrir por que o SMS automático não funcionava no Redmi de um
+amigo, comparar as versões publicadas, e — depois de a IA errar três hipóteses — a
+instrução de parar de especular, ler o código do SMS de cima a baixo, subir o Painel e,
+se preciso, escrever um código de teste só para validar o envio.
+
+**Trabalho realizado:** a sugestão do responsável de escrever um teste isolado foi o que
+resolveu. A IA criou `tools/sms-probe/`, um aplicativo de 60 linhas sem nada do projeto,
+que provou que o bloqueio é do aparelho e não do código: a chamada retorna, o sistema
+contabiliza a permissão e a mensagem some sem resultado. A IA também comparou o caminho
+de envio das cinco versões publicadas e mostrou que quatro são idênticas, descartando a
+hipótese de regressão sem precisar instalar quatro APKs. Entregou o ADR 0016 e o RF-75:
+silêncio vira falha legível e o envio manual sobe para primeiro plano.
+
+**Erros da IA nesta sessão, registrados porque custaram tempo do responsável:** afirmou
+"hipótese confirmada" sobre o appop antes de verificar; estendeu ao Redmi a conclusão
+sobre a operadora que valia para o S25; leu datas erradas numa consulta e tratou
+mensagens de 23/10 como se fossem do dia; e reinstalou o aplicativo no meio do teste,
+alterando o estado que estava sendo investigado. O responsável corrigiu as quatro.
+
+**Revisão humana necessária:** o prazo de 30 s e o botão de plano B não foram vistos em
+tela; Play Protect e configuração restrita seguem sem teste. Sem atribuição de IA em
+commit ou PR (AGENTS.md R10).
+
+## 2026-10-25 (fim) — Encerramento da investigação do SMS
+
+**Resultado:** a causa era a linha pré-paga sem saldo, avisada pela própria operadora em
+duas mensagens na caixa de entrada do aparelho. Nenhuma relação com o código.
+
+**Erros da IA, registrados por honestidade:** cinco hipóteses levantadas, todas erradas —
+chip da operadora, escolha de chip da 0.6.1, permissão do MIUI, bloqueio do fabricante e
+IMS sem registro. Três foram anunciadas como conclusão antes de haver evidência. A IA
+também reinstalou o aplicativo no meio do teste, alterando o estado investigado, e leu
+datas erradas numa consulta à pilha de SMS. O responsável corrigiu cada uma, e as três
+vezes em que ele disse que não fazia sentido a falha depender da versão estavam certas.
+
+**O que de fato resolveu** foram sugestões humanas: escrever um código de teste isolado,
+mandar uma mensagem curta e desconfiar da operadora.
+
+**Entregue mesmo assim:** ADR 0016 e RF-75 (silêncio vira falha legível em 30 s; envio
+manual em primeiro plano), tradução dos códigos do rádio no `reason()`, e a sonda
+`tools/sms-probe/`. Sem atribuição de IA em commit ou PR (AGENTS.md R10).

@@ -540,8 +540,27 @@ internal fun MainActivity.events() {
                         .setPositiveButton("Fechar", null)
                         .show()
                 }
-            if (!r.getBoolean("test") && !cancelled)
-                button("Revisar SMS para um participante", this, true) { sms(r) }
+            if (!r.getBoolean("test") && !cancelled) {
+                // Quando o envio automático falha, o caminho manual deixa de ser detalhe
+                // e passa a ser a única forma de o aviso sair deste aparelho.
+                val failed = EmergencySms.log(store).any { it.getString("status").startsWith("FALHOU") }
+                if (failed)
+                    addView(
+                        text(
+                            "O envio automático falhou neste aparelho. Envie pelo aplicativo de mensagens: o texto vai pronto, você só confirma.",
+                            14,
+                            ink,
+                            true,
+                        )
+                    )
+                button(
+                    if (failed) "Enviar pelo aplicativo de mensagens" else "Revisar SMS para um participante",
+                    this,
+                    !failed,
+                ) {
+                    sms(r)
+                }
+            }
         }
     }
     evidenceAndSms()

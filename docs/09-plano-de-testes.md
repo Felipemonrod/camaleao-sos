@@ -616,3 +616,160 @@ Android. A tela de Compatibilidade, em Xiaomi/Redmi/POCO, aponta a permissão do
 | Compilação, testes unitários e Lint | aprovados |
 | SMS no Redmi com a 0.6.1 | **não testado**: falta ler a linha `FALHOU: …` em Ocorrências |
 
+
+### Execução de 25/10/2026 (noite) — SMS no Redmi de terceiro, com sonda isolada
+
+Aparelho: **Xiaomi Redmi Note 12** (`23028RA60L`), **Android 15** (SDK 35),
+**HyperOS OS2.0.208.0.VMTMIXM** (MIUI V816), um chip (Claro BR). Celular de um amigo do
+responsável, conduzido com autorização dele e do responsável.
+
+**Instalação:** o APK foi instalado por `adb`, **não** pela página. Isso marcou o app
+como `RESTRICTION_INSTALLER_EXEMPT`, então **o teste do Play Protect e o da configuração
+restrita do Android 15 continuam pendentes** — esta execução não os reproduz.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| SHA-256 do APK 0.6.1 baixado da página | confere com o publicado |
+| SHA-256 do APK 0.5.0 baixado da página | confere com o publicado |
+| Chips | **um** (Claro BR), `defaultSmsSubId=1`, sem "perguntar sempre" |
+| `SEND_SMS` / `CALL_PHONE` | concedidas; appop `SEND_SMS` em `allow` |
+| Permissão do MIUI (Outras permissões → Enviar SMS) | **Permitido**, relatado pelo responsável |
+| SMS automático do app (0.6.1 e 0.5.0) | **nenhuma mensagem entregue**; nenhuma linha nova na pilha de SMS |
+| Ligação | funcionou |
+| Envio manual pelo aplicativo de mensagens | funcionou |
+| **Sonda isolada `tools/sms-probe`** | **`sendTextMessage` retorna sem exceção; appop registrado como `allow`; nenhum resultado no `sentIntent` em 40 s; nenhuma linha na pilha; nada entregue — 3 execuções** |
+
+**O que a sonda prova.** Ela tem 60 linhas e nada do Camaleão. Falha igual. Portanto o
+defeito **não está no código de SMS do projeto**: neste aparelho, um aplicativo que não é
+o de mensagens padrão não consegue enviar SMS, e o sistema não informa isso de forma
+alguma — nem erro, nem resultado.
+
+**Comparação entre versões publicadas** (pedida pelo responsável, que lembrava de uma
+versão antiga funcionando):
+
+| Versão | Caminho de envio |
+|---|---|
+| 0.3.0, 0.4.0, 0.5.0, 0.6.0 | `getSystemService(SmsManager)` → `sendMultipartTextMessage(phone, null, parts, sent, null)` — **idêntico nas quatro** |
+| 0.6.1 | o mesmo, mais `createForSubscriptionId` |
+
+Quatro das cinco versões são iguais no envio, e a sonda exercita esse mesmo caminho. A
+diferença lembrada não está no código; estava no estado do aparelho. ⚠️ As reinstalações
+feitas nesta sessão alteraram esse estado e **impedem reconstruir** o episódio de 23/10,
+quando 20 mensagens saíram deste mesmo aparelho.
+
+**Correção entregue** ([ADR 0016](../.claude/decisions/0016-silencio-do-sistema-e-plano-b-de-sms.md),
+RF-75): registro `PENDENTE` sem resposta em 30 s vira falha legível, e a Ocorrência passa
+a oferecer o envio pelo aplicativo de mensagens. 28 testes unitários e Lint aprovados.
+**Nada disso foi exercitado em aparelho:** o prazo de 30 s e o botão novo não foram
+vistos em tela.
+
+**Observação de método, para não se perder:** três horas de teste pela interface não
+responderam o que a sonda respondeu em dez minutos. Quando a pergunta é "o aparelho
+permite X?", o caminho curto é um programa que só faz X.
+
+#### Causa encontrada: o modem recusa o envio (`RESULT_RIL_MODEM_ERR`)
+
+A primeira sonda não trouxe resultado nenhum porque **ela** usava `FLAG_ONE_SHOT` no
+`PendingIntent`. Com `FLAG_UPDATE_CURRENT`, o resultado chegou — a afirmação anterior de
+que "o sistema não responde nada" era defeito da sonda, não do aparelho.
+
+| Verificação executada | Resultado observado |
+|---|---|
+| Sonda, `sendTextMessage` com texto "oi" | **`RESULTADO simples: codigo 111`** |
+| Sonda, `sendMultipartTextMessage` (1 parte) | **`RESULTADO multi0: codigo 111`** |
+| Significado de 111, conferido em `android.jar` da API 36 | **`SmsManager.RESULT_RIL_MODEM_ERR = 111`** |
+| Linhas na pilha de SMS depois dos dois envios | inalteradas (20) |
+| `creator` das 20 mensagens de 23/10 | **`br.com.camaleao.sos`**, `sub_id=1` |
+
+**Conclusão.** O envio falha no **rádio**, abaixo do Android e abaixo da camada do
+fabricante. Os dois métodos de envio falham igual, com e sem multipart, com texto curto.
+O `creator` prova que em 23/10 o próprio Camaleão enviou 20 mensagens por este mesmo chip:
+o código funcionava e funciona; o que mudou foi o estado do modem.
+
+Isso também descarta, em definitivo, as hipóteses de permissão do MIUI, de escolha de
+chip e de regressão entre versões — nenhuma delas chega ao rádio.
+
+**Correção acrescentada:** `EmergencySms.reason()` passa a traduzir os códigos 100+ do
+rádio. Antes, 111 cairia em `"código 111"`; agora diz "o modem do aparelho recusou o
+envio — reiniciar o celular costuma resolver".
+
+⚠️ **Não verificado:** se reiniciar o aparelho (ou alternar o modo avião) restabelece o
+envio. É o próximo passo óbvio e não foi feito — mexer no aparelho de terceiro além do
+necessário não estava autorizado.
+
+#### A causa no rádio: SMS sem IMS registrado, e fallback CS que falha
+
+O buffer `logcat -b radio` do Redmi Note 12, durante um envio da sonda:
+
+```
+RILJ: [1065]< SEND_SMS error 10 [PHONE0]
+RilRequest: [1065]< SEND_SMS error: CommandException: SMS_FAIL_RETRY
+ImsSmsDispatcher [0]: isAvailable: up=true, reg=false, cap=false
+GsmSMSDispatcher: sendSms: isIms()=false mRetryCount=1
+SmsMmsAnalytics: Type = SMS Outgoing Status = Failure RAT LTE
+                 Failure Reason = RESULT_RIL_SMS_SEND_FAIL_RETRY
+SmsMmsAnalyticsProvider: Updated Count = 101
+SMSDispatcher: SMS retry..
+```
+
+| Fato no log | Leitura |
+|---|---|
+| `ImsSmsDispatcher: reg=false, cap=false` | **o IMS não está registrado** — não há SMS sobre IMS/VoLTE |
+| `isIms()=false`, cai no `GsmSMSDispatcher` | o Android tenta o caminho CS (GSM) sobre LTE |
+| `SEND_SMS error 10` → `SMS_FAIL_RETRY` | o modem recusa e pede nova tentativa |
+| `SMSDispatcher: SMS retry..` e novo `> SEND_SMS` | o Android repete, e repete |
+| `Updated Count = 101` | o próprio aparelho já contabilizou 101 falhas de SMS |
+
+Isso explica as duas observações que pareciam contraditórias: o `RESULT_RIL_MODEM_ERR`
+(111) de uma execução e o silêncio de outra são o **mesmo** evento visto em momentos
+diferentes do ciclo de retentativa. Enquanto o Android repete, nenhum resultado final
+chega ao aplicativo — e a chamada fica pendurada.
+
+E explica 23/10: naquele dia 20 mensagens saíram deste chip pelo próprio Camaleão
+(`creator=br.com.camaleao.sos`). O que mudou não foi o aplicativo, foi o registro de IMS.
+
+**O que resolve, e é do aparelho, não do código:** ligar o VoLTE (chamadas 4G) nas
+configurações do chip, ou permitir 3G/2G na seleção de rede, para o SMS ter por onde
+sair. ⚠️ **Não verificado** — não foi feito, por ser configuração de rede do celular de
+terceiro, fora do que estava autorizado.
+
+**Nada neste diagnóstico aponta para o código do Camaleão.** O ciclo de modo avião não
+resolveu; ao contrário, trocou "falha com código" por "pendurado em retentativa".
+
+#### Causa raiz: linha pré-paga sem saldo
+
+O teste de SMS do aparelho **para o próprio número** falhou com o mesmo
+`SMS_FAIL_RETRY`. A caixa de entrada do aparelho explica por quê — duas mensagens da
+própria operadora, entre as mais recentes:
+
+```
+de 20100 : "O saldo do seu Pre-pago esta baixo! Recarregue ou antecipe R$10,00 de credito"
+de 555   : "Nao fique sem saldo. Recarregue a partir de R$20 e ganhe 2GB de Internet!"
+```
+
+A linha é **pré-paga e está sem saldo**. Enviar SMS é cobrado; receber não. Isso fecha
+cada observação da investigação, sem sobrar nenhuma:
+
+| Observação | Explicação |
+|---|---|
+| Recebe SMS normalmente (2509 na caixa de entrada) | receber não consome saldo |
+| Dados e RCS funcionam | o pacote de internet do plano continua ativo |
+| Ligação funciona | franquia de voz do plano |
+| **Nenhum SMS sai**, nem para o próprio número | enviar exige saldo |
+| `SMS_FAIL_RETRY` com `mErrorCode = -1` | a rede recusa a submissão sem devolver causa — é recusa de tarifação, não erro técnico |
+| 20 mensagens saíram em 23/10 | havia saldo naquele dia |
+| 101 falhas na telemetria do aparelho | acumuladas desde que o saldo acabou |
+
+**Nada disto tem relação com o Camaleão.** Nem com a versão, nem com a permissão do
+MIUI, nem com a escolha de chip, nem com o VoLTE. As cinco hipóteses levantadas ao longo
+da investigação — incluindo as três que a IA anunciou cedo demais — estavam todas erradas.
+
+**O que o episódio ensina ao produto:** num aparelho sem saldo, o Camaleão mostrava
+"enviado" e deixava o registro em `PENDENTE` para sempre. A usuária acreditaria que o
+pedido de ajuda saiu. É precisamente o cenário que o
+[ADR 0016](../.claude/decisions/0016-silencio-do-sistema-e-plano-b-de-sms.md) corrige:
+silêncio vira falha legível em 30 s, e o envio pelo aplicativo de mensagens sobe para
+primeiro plano.
+
+⚠️ **Não verificado:** que recarregar a linha restabelece o envio. É a conclusão óbvia e
+não foi testada — exigiria recarregar o celular de terceiro.
