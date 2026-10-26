@@ -11,6 +11,7 @@ segurança** sem enviar áudio para a nuvem.
 
 **Estado:** implementação Android e Painel local; consulte o [estado verificado](docs/08-plano-prototipo.md#estado-da-implementação).
 **Protótipo:** Kotlin nativo, Android apenas, custo zero em software e serviços.
+**Baixar e testar:** [felipemonrod.github.io/camaleao-sos](https://felipemonrod.github.io/camaleao-sos/), com o APK da versão de demonstração e o QR para instalar no celular.
 
 ---
 
