@@ -607,3 +607,10 @@ fica para o próximo aparelho.
 
 Ao fim, com autorização do responsável, o Cálculos e a sonda foram desinstalados do
 celular do amigo. Nada ficou no aparelho dele.
+
+## 2026-10-25 — release 0.6.2
+
+APK 0.6.2 com a PR #7 (silêncio do sistema vira FALHOU, códigos do rádio traduzidos e
+plano B manual para o SMS). Causa do Redmi: linha pré-paga sem saldo. Publicado em
+`v0.6.2-demo` e na página; o APK de release não foi aberto em aparelho.
+

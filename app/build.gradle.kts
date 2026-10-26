@@ -11,7 +11,7 @@ android {
     compileSdk = 36
     defaultConfig {
         applicationId = "br.com.camaleao.sos"
-        minSdk = 26; targetSdk = 36; versionCode = 7; versionName = "0.6.1"
+        minSdk = 26; targetSdk = 36; versionCode = 8; versionName = "0.6.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
     }
