@@ -127,6 +127,7 @@ SISTEMA-SOT.md          o método: seis invariantes
 AGENTS.md               contrato para agentes de IA
 CONTRIBUTING.md         fluxo para pessoas
 RELATORIO-IA.md         registro do uso de IA
+LICENSE, NOTICE         licença Apache 2.0 e avisos de terceiros
 docs/00..11             documentação, um dono por assunto
 docs/_templates/        modelos de ADR e de documento
 pesquisa/               dossiês de investigação, um por sistema estudado
@@ -138,6 +139,9 @@ referencias/            material de origem, íntegro
 
 ## Licença
 
-⚠️ **Ainda não definida.** O projeto é institucional e usa dependências Apache-2.0
-(Vosk, sherpa-onnx); Apache-2.0 ou MIT são os candidatos naturais, mas a escolha
-envolve a instituição. **Definir antes de tornar o repositório público.**
+Código sob a [Licença Apache 2.0](LICENSE).
+Copyright 2026 Felipe Montalvão Rodrigues e Fernando Alves de Souza.
+
+As dependências (Vosk e seu modelo pt-BR, JNA, Kotlin e AndroidX) também são
+Apache-2.0; a lista e os avisos estão em [NOTICE](NOTICE). O material em
+`referencias/` é de terceiros e **não** é coberto por esta licença.
