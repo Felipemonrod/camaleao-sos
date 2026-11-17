@@ -9,6 +9,9 @@ jobs:
   verificar:
     name: Invariantes do Sistema SOT
     runs-on: ubuntu-latest
+    # Só lê o código: o token do CI não precisa escrever nada no repositório.
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 

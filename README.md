@@ -122,6 +122,11 @@ oficialmente. O levantamento honesto do que é e do que não é novo aqui está 
 ## Estrutura
 
 ```
+app/                    aplicativo Android (Kotlin): código, testes e testes no aparelho
+server/                 Painel local (Node.js, HTTPS): recebe Ocorrências e emite recibos
+tools/                  scripts de apoio, índice em tools/README.md
+.github/                CI (Android e Painel; invariantes do SOT) e modelos de issue e PR
+
 SOT.md                  ponto de entrada único
 SISTEMA-SOT.md          o método: seis invariantes
 AGENTS.md               contrato para agentes de IA
@@ -133,9 +138,13 @@ docs/_templates/        modelos de ADR e de documento
 pesquisa/               dossiês de investigação, um por sistema estudado
 .claude/decisions/      ADRs
 .claude/NOTES.md        cronológico
-tools/verificar-sot.py  verificador das invariantes
 referencias/            material de origem, íntegro
 ```
+
+Ficam fora do Git, por tamanho ou por segredo: o modelo de voz
+(`app/src/main/assets/models/`, baixado por `tools/preparar-modelos.py`), a chave de
+assinatura (`keystore.properties`), os dados e certificados do Painel (`server/data/`,
+`server/certs/`, gerados por `node server/setup.mjs`), `dados-brutos/` e `artifacts/`.
 
 ## Licença
 

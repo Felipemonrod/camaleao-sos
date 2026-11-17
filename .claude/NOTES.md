@@ -229,9 +229,9 @@ Pendente, em ordem:
 3. Sessão com a voz real (roteiro em docs/08) e medição de bateria fora do carregador.
 4. Ensaio da demo no hotspot: `tools/preparar-notebook.ps1 -Ip <ip> -Renovar` no notebook.
 
-Ambiente: notebook `desktop-6gaa1oa` acessível por SSH via Tailscale com chave dedicada
-(`~/.ssh/id_camaleao_notebook`, só no PC do responsável); projeto copiado em
-`C:\Users\felipe\Documents\camaleao-sos` (cópia de arquivos, não clone do Git); firewall
+Ambiente: notebook da apresentação acessível por SSH via VPN, com chave dedicada que
+fica só no PC do responsável; projeto copiado na pasta de documentos do notebook
+(cópia de arquivos, não clone do Git); firewall
 8443 liberado só em rede Privada. Corpus e avaliador de voz em `tools/voz/`
 (dados em `dados-brutos/`, ignorado).
 
